@@ -1,0 +1,16 @@
+name: rest test plan
+depends:
+  - xxx
+type: plan
+enabled: true # default is true
+environment:
+  API_PREFIX: http://localhost:8080/api
+  API_TOKEN: some_token
+  GH_SERVER: github.com
+global:
+  headers:
+    Authorization: Bearer ${API_TOKEN}
+    Content-Type: application/json
+  dataDir: ./data
+suites:
+  - rest_test_suite

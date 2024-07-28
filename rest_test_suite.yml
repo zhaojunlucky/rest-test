@@ -1,16 +1,20 @@
 name: github_api
-depends: xxx
+depends:
+  - xxx
+type: suite
+enabled: true # default is true
 environment:
-    API_PREFIX: http://localhost:8080/api
-    API_TOKEN: some_token
-    GH_SERVER: github.com
+  API_PREFIX: http://localhost:8080/api
+  API_TOKEN: some_token
+  GH_SERVER: github.com
 global:
   headers:
     Authorization: Bearer ${API_TOKEN}
     Content-Type: application/json
   dataDir: ./data
-tests:
+cases:
   - desc: list github servers
+    enabled: true # default is true
     name: list
     request:
       url: github
@@ -113,9 +117,8 @@ tests:
             - $.entryCount: 1
             - $.entries.length: 1
             - $.entries[0].id: ${create.resp.id}
-        script:
-          if (body.entries[0].name != 'xxx') {
-              throw new Error("invalid name")
+        script: if (body.entries[0].name != 'xxx') {
+          throw new Error("invalid name")
           }
   - desc: get github server
     request:
