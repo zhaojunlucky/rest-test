@@ -8,8 +8,9 @@ import (
 )
 
 type RestTestResponsePlainBody struct {
-	Length int
-	Regex  *regexp.Regexp
+	RestTestRequest *RestTestRequestDef
+	Length          int
+	Regex           *regexp.Regexp
 }
 
 func (d RestTestResponsePlainBody) Validate(ctx *RestTestContext, resp *http.Response) error {

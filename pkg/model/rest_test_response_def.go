@@ -1,11 +1,15 @@
 package model
 
-import "github.com/zhaojunlucky/golib/pkg/collection"
+import (
+	"github.com/zhaojunlucky/golib/pkg/collection"
+	"net/http"
+)
 
 type RestTestResponseDef struct {
-	Code        int
-	ContentType string
-	Body        RestTestResponseBodyDef
+	RestTestRequest *RestTestRequestDef
+	Code            int
+	ContentType     string
+	Body            RestTestResponseBodyDef
 }
 
 func (t RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
@@ -29,7 +33,9 @@ func (t RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 		return err
 	}
 
-	t.Body = RestTestResponseBodyDef{}
+	t.Body = RestTestResponseBodyDef{
+		RestTestRequest: t.RestTestRequest,
+	}
 	err = t.Body.Parse(bodyObj)
 	if err != nil {
 		return err
@@ -37,4 +43,8 @@ func (t RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 
 	return nil
 
+}
+
+func (t RestTestResponseDef) Validate(ctx *RestTestContext, resp *http.Response) error {
+	return t.Body.Validate(ctx, resp)
 }

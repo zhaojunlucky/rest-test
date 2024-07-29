@@ -7,10 +7,11 @@ import (
 )
 
 type RestTestResponseFileBody struct {
-	Max    int
-	Length int
-	Min    int
-	Sha256 string
+	RestTestRequest *RestTestRequestDef
+	Max             int
+	Length          int
+	Min             int
+	Sha256          string
 }
 
 func (d RestTestResponseFileBody) Validate(ctx *RestTestContext, resp *http.Response) error {

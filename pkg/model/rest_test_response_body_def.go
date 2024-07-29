@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"github.com/zhaojunlucky/golib/pkg/collection"
+	"net/http"
 	"strings"
 )
 
@@ -11,8 +12,9 @@ const Plain = "Plain"
 const File = "file"
 
 type RestTestResponseBodyDef struct {
-	Type          string
-	BodyValidator RestTestResponseBodyValidator
+	RestTestRequest *RestTestRequestDef
+	Type            string
+	BodyValidator   RestTestResponseBodyValidator
 }
 
 func (d RestTestResponseBodyDef) Parse(bodyObj any) error {
@@ -27,14 +29,24 @@ func (d RestTestResponseBodyDef) Parse(bodyObj any) error {
 	}
 
 	if strings.EqualFold(JSON, d.Type) {
-		d.BodyValidator = &RestTestResponseJSONBody{}
+		d.BodyValidator = &RestTestResponseJSONBody{
+			RestTestRequest: d.RestTestRequest,
+		}
 	} else if strings.HasSuffix(d.Type, File) {
-		d.BodyValidator = &RestTestResponseFileBody{}
+		d.BodyValidator = &RestTestResponseFileBody{
+			RestTestRequest: d.RestTestRequest,
+		}
 	} else if strings.EqualFold(Plain, d.Type) {
-		d.BodyValidator = &RestTestResponsePlainBody{}
+		d.BodyValidator = &RestTestResponsePlainBody{
+			RestTestRequest: d.RestTestRequest,
+		}
 	} else {
 		return fmt.Errorf("unsupported body type: %s", d.Type)
 	}
 
 	return d.BodyValidator.Parse(mapWrapper)
+}
+
+func (d RestTestResponseBodyDef) Validate(ctx *RestTestContext, resp *http.Response) error {
+	return d.BodyValidator.Validate(ctx, resp)
 }

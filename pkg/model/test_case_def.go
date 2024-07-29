@@ -51,7 +51,9 @@ func (t TestCaseDef) Parse(caseDef map[string]any) error {
 		return err
 	}
 
-	t.Response = RestTestResponseDef{}
+	t.Response = RestTestResponseDef{
+		RestTestRequest: &t.Request,
+	}
 
 	return t.Response.Parse(mapWrapper)
 }

@@ -11,6 +11,7 @@ const OR = "or"
 const AND = "and"
 
 type RestTestResponseJSONBody struct {
+	RestTestRequest     *RestTestRequestDef
 	Array               bool
 	Length              int
 	ContainsRequestJSON bool
