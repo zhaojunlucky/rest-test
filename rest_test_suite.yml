@@ -23,8 +23,8 @@ cases:
       code: 200 #
       contentType: application/json
       body:
-        type: JSON # it will detect from contentType, but we also can force it to json
-        array: true # json array or not
+        type: JSON
+        array: false # json array or not, default is false
         length: 0 # json array length
   - desc: create github server
     name: create
@@ -54,7 +54,7 @@ cases:
         validators:
           and:
             - $.id: ${create.resp.id}
-      containsRequestJSON: create
+        containsRequestJSON: create
   - desc: create duplicate github server
     requestRef: create
     response:
@@ -92,7 +92,7 @@ cases:
       code: 200
       contentType: application/json
       body:
-        array: true
+        array: false
         validators:
           and:
             - $.entryCount: 2
@@ -111,7 +111,7 @@ cases:
       code: 200
       contentType: application/json
       body:
-        array: true
+        array: false
         validators:
           and:
             - $.entryCount: 1

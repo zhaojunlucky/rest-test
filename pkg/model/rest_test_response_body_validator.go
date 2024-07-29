@@ -1,7 +1,11 @@
 package model
 
-import "net/http"
+import (
+	"github.com/zhaojunlucky/golib/pkg/collection"
+	"net/http"
+)
 
 type RestTestResponseBodyValidator interface {
-	Validate(resp http.Response) error
+	Parse(mapWrapper *collection.MapWrapper) error
+	Validate(ctx *RestTestContext, resp *http.Response) error
 }
