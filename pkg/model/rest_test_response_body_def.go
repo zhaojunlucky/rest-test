@@ -32,7 +32,7 @@ func (d RestTestResponseBodyDef) Parse(bodyObj any) error {
 		d.BodyValidator = &RestTestResponseJSONBody{
 			RestTestRequest: d.RestTestRequest,
 		}
-	} else if strings.HasSuffix(d.Type, File) {
+	} else if strings.EqualFold(d.Type, File) {
 		d.BodyValidator = &RestTestResponseFileBody{
 			RestTestRequest: d.RestTestRequest,
 		}
