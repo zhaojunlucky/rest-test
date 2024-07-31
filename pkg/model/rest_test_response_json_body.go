@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"github.com/zhaojunlucky/golib/pkg/collection"
+	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"golang.org/x/exp/maps"
 	"math"
 	"net/http"
@@ -20,7 +21,7 @@ type RestTestResponseJSONBody struct {
 	Validators          map[string]any
 }
 
-func (d RestTestResponseJSONBody) Validate(ctx *RestTestContext, resp *http.Response) error {
+func (d RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *http.Response) error {
 	return nil
 }
 func (d RestTestResponseJSONBody) Parse(mapWrapper *collection.MapWrapper) error {

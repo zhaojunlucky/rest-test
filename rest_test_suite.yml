@@ -9,7 +9,7 @@ environment:
   GH_SERVER: github.com
 global:
   headers:
-    Authorization: Bearer ${API_TOKEN}
+    Authorization: Bearer ${env.API_TOKEN}
     Content-Type: application/json
   dataDir: ./data
 cases:
@@ -72,7 +72,7 @@ cases:
       body:
         file: create_gh_server2.json
         env:
-          webUrl: https://${GH_SERVER}
+          webUrl: https://${env.GH_SERVER}
         script: |
           let data = JSON.parse(body)
           data.name = 'test2'

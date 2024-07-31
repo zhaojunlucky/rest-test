@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"github.com/zhaojunlucky/golib/pkg/collection"
+	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"io"
 	"math"
 	"net/http"
@@ -15,7 +16,7 @@ type RestTestResponsePlainBody struct {
 	Regex           *regexp.Regexp
 }
 
-func (d RestTestResponsePlainBody) Validate(ctx *RestTestContext, resp *http.Response) error {
+func (d RestTestResponsePlainBody) Validate(ctx *core.RestTestContext, resp *http.Response) error {
 	if d.Length != math.MinInt && d.Length != resp.ContentLength {
 		return fmt.Errorf("invalid content length: %d, expect %d", resp.ContentLength, d.Length)
 	}

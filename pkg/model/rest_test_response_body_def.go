@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"github.com/zhaojunlucky/golib/pkg/collection"
+	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"net/http"
 	"strings"
 )
@@ -47,6 +48,6 @@ func (d RestTestResponseBodyDef) Parse(bodyObj any) error {
 	return d.BodyValidator.Parse(mapWrapper)
 }
 
-func (d RestTestResponseBodyDef) Validate(ctx *RestTestContext, resp *http.Response) error {
+func (d RestTestResponseBodyDef) Validate(ctx *core.RestTestContext, resp *http.Response) error {
 	return d.BodyValidator.Validate(ctx, resp)
 }
