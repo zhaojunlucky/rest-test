@@ -1,6 +1,4 @@
 name: rest test plan
-depends:
-  - xxx
 type: plan
 enabled: true # default is true
 environment:

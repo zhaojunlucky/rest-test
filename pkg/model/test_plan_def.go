@@ -12,7 +12,7 @@ import (
 
 type TestPlanDef struct {
 	Name        string
-	Depends     []string
+	depends     []string
 	Enabled     bool
 	Environment map[string]string
 	Global      GlobalSetting
@@ -46,7 +46,7 @@ func (t *TestPlanDef) Parse(file string) error {
 	if err != nil {
 		log.Warningf("key depends not found in test plan %s", t.Name)
 	} else {
-		t.Depends, err = collection.GetObjAsSlice[string](depends)
+		t.depends, err = collection.GetObjAsSlice[string](depends)
 		if err != nil {
 			err = fmt.Errorf("key depends in test plan %s is not a string or a string list. %w", t.Name, err)
 			return err
