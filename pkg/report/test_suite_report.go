@@ -38,3 +38,7 @@ func (t *TestSuiteReport) GetError() error {
 func (t *TestSuiteReport) GetStatus() string {
 	return t.Status
 }
+
+func (t *TestSuiteReport) HasPassed() bool {
+
+}

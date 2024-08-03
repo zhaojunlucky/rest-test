@@ -7,8 +7,9 @@ type TestCaseDef struct {
 	Description string
 	Enabled     bool
 	Environment map[string]string
-	Request     RestTestRequestDef
-	Response    RestTestResponseDef
+	Request     *RestTestRequestDef
+	RequestRef  string
+	Response    *RestTestResponseDef
 }
 
 func (t TestCaseDef) Parse(caseDef map[string]any) error {
@@ -44,15 +45,15 @@ func (t TestCaseDef) Parse(caseDef map[string]any) error {
 		}
 	}
 
-	t.Request = RestTestRequestDef{}
+	t.Request = &RestTestRequestDef{}
 
 	err = t.Request.Parse(mapWrapper)
 	if err != nil {
 		return err
 	}
 
-	t.Response = RestTestResponseDef{
-		RestTestRequest: &t.Request,
+	t.Response = &RestTestResponseDef{
+		RestTestRequest: t.Request,
 	}
 
 	return t.Response.Parse(mapWrapper)

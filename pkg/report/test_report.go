@@ -1,9 +1,10 @@
 package report
 
 const (
-	ConfigError = "ConfigError"
-	Skipped     = "Skipped"
-	Completed   = "Completed"
+	ConfigError     = "ConfigError"
+	DependencyError = "DependencyError"
+	Skipped         = "Skipped"
+	Completed       = "Completed"
 )
 
 type TestReport[T any] interface {

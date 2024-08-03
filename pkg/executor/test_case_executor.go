@@ -13,15 +13,22 @@ import (
 type TestCaseExecutor struct {
 }
 
-func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, global *model.GlobalSetting, testDef *model.TestCaseDef, testCaseExecResult *execution.TestCaseExecutionResult) (*report.TestCaseReport, error) {
+func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, global *model.GlobalSetting, testCaseExecResult *execution.TestCaseExecutionResult) *report.TestCaseReport {
 
+	//if err != nil {
+	//	log.Errorf("test case %s failed, error: %v", testCaseDef.Name, err)
+	//} else {
+	//	log.Infof("test case %s passed", testCaseDef.Name)
+	//}
 	testCaseReport := report.TestCaseReport{
-		TestCase: testDef,
+		TestCase: testCaseExecResult.TestCaseDef,
 	}
+
+	testCaseExecResult.TestCaseReport = &testCaseReport
 
 	start := time.Now()
 	testCaseReport.ExecutionTime = time.Since(start).Seconds()
-	return &testCaseReport, nil
+	return &testCaseReport
 }
 
 func (t *TestCaseExecutor) Prepare(ctx *execution.TestSuiteExecutionResult, def model.TestCaseDef) error {
@@ -30,8 +37,14 @@ func (t *TestCaseExecutor) Prepare(ctx *execution.TestSuiteExecutionResult, def 
 	}
 
 	testCaseExecResult := &execution.TestCaseExecutionResult{
-		TestCaseDef: &def,
+		TestCaseDef:              &def,
+		TestSuiteExecutionResult: ctx,
 	}
 	ctx.AddTestCaseExecResults(testCaseExecResult)
+	return nil
+}
+
+func (t *TestCaseExecutor) Validate(result *execution.TestCaseExecutionResult) error {
+
 	return nil
 }

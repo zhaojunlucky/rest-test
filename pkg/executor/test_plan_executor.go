@@ -2,7 +2,6 @@ package executor
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/golib/pkg/env"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"github.com/zhaojunlucky/rest-test/pkg/core/execution"
@@ -15,42 +14,66 @@ type TestPlanExecutor struct {
 	testSuiteExecutor *TestSuiteExecutor
 }
 
-func (t *TestPlanExecutor) Execute(ctx *core.RestTestContext, environ env.Env, testDef *model.TestPlanDef) (*report.TestPlanReport, error) {
-	planReport := report.TestPlanReport{
-		TestPlan: testDef,
+func (t *TestPlanExecutor) ExecutePlan(environ env.Env, testPlanDef *model.TestPlanDef) (*report.TestPlanReport, error) {
+	t.testSuiteExecutor = &TestSuiteExecutor{}
+
+	testPlanExecCtx, err := t.Prepare(testPlanDef)
+	if testPlanExecCtx == nil {
+		return nil, fmt.Errorf("failed to prepare test plan: %v", err)
 	}
 
-	testPlanExecResults, err := t.Prepare(testDef)
-	testPlanExecResults.TestPlanReport = &planReport
+	testPlanExecCtx.TestPlanReport = &report.TestPlanReport{
+		TestPlan: testPlanDef,
+	}
 
+	planReport := testPlanExecCtx.TestPlanReport
 	if err != nil {
 		planReport.Error = err
 		planReport.Status = report.ConfigError
-		return &planReport, nil
+		return planReport, err
 	}
 
-	if testDef.Enabled == false {
-		planReport.Error = fmt.Errorf("test plan %s is disabled", testDef.Name)
-		planReport.Status = report.Skipped
-		return &planReport, nil
+	if err = t.Validate(testPlanExecCtx); err != nil {
+		planReport.Error = err
+		planReport.Status = report.ConfigError
+		return planReport, err
 	}
-	t.testSuiteExecutor = &TestSuiteExecutor{}
+	ctx := &core.RestTestContext{}
+	planEnv := env.NewReadWriteEnv(environ, testPlanDef.Environment)
+
+	t.Execute(ctx, planEnv, &testPlanDef.Global, testPlanExecCtx)
+
 	start := time.Now()
-	for i, testSuiteDef := range testDef.Suites {
-		newEnv := env.NewReadWriteEnv(environ, testDef.Environment)
-		testSuiteReport, err := t.testSuiteExecutor.Execute(ctx, newEnv, &testDef.Global, &testSuiteDef, testPlanExecResults.TestSuiteExecResults[i])
-		if err != nil {
-			log.Errorf("test suite %s failed, error: %v", testSuiteReport.TestSuite.Name, err)
-		} else {
-			log.Infof("test suite %s passed", testSuiteReport.TestSuite.Name)
-		}
+
+	planReport.ExecutionTime = time.Since(start).Seconds()
+	planReport.TotalTime = time.Since(start).Seconds()
+	planReport.Status = report.Completed
+	return planReport, nil
+}
+
+func (t *TestPlanExecutor) Execute(ctx *core.RestTestContext, environ env.Env, global *model.GlobalSetting, testPlanExecCtx *execution.TestPlanExecutionResult) {
+
+	testPlanDef := testPlanExecCtx.TestPlanDef
+	planReport := testPlanExecCtx.TestPlanReport
+	if testPlanDef.Enabled == false {
+		planReport.Error = fmt.Errorf("test plan %s is disabled", testPlanDef.Name)
+		planReport.Status = report.Skipped
+		return
+	}
+
+	start := time.Now()
+	for _, testSuiteExecResult := range testPlanExecCtx.TestSuiteExecResults {
+		newEnv := env.NewReadWriteEnv(environ, testSuiteExecResult.TestSuiteDef.Environment)
+		suiteGlobal := global.With(&testSuiteExecResult.TestSuiteDef.Global)
+
+		testSuiteReport := t.testSuiteExecutor.Execute(ctx, newEnv, suiteGlobal, testSuiteExecResult)
+
 		planReport.ExecutionTime += testSuiteReport.ExecutionTime
 		planReport.AddTestSuiteReport(testSuiteReport)
 	}
 
 	planReport.TotalTime = time.Since(start).Seconds()
 	planReport.Status = report.Completed
-	return &planReport, nil
 }
 
 func (t *TestPlanExecutor) Prepare(def *model.TestPlanDef) (testPlanExecCtx *execution.TestPlanExecutionResult, err error) {
@@ -66,4 +89,24 @@ func (t *TestPlanExecutor) Prepare(def *model.TestPlanDef) (testPlanExecCtx *exe
 		}
 	}
 	return
+}
+
+func (t *TestPlanExecutor) Validate(ctx *execution.TestPlanExecutionResult) error {
+	for _, testSuiteExecResult := range ctx.TestSuiteExecResults {
+		for _, dep := range testSuiteExecResult.TestSuiteDef.Depends {
+			if !ctx.HasNamed(dep) {
+				return fmt.Errorf("depends %s of test suite %s not found",
+					dep, testSuiteExecResult.TestSuiteDef.Name)
+			}
+		}
+
+		if err := t.testSuiteExecutor.Validate(testSuiteExecResult); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func NewTestPlanExecutor() *TestPlanExecutor {
+	return &TestPlanExecutor{}
 }
