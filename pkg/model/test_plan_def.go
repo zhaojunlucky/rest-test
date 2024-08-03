@@ -12,7 +12,7 @@ import (
 
 type TestPlanDef struct {
 	Name        string
-	depends     []string
+	depends     []string // not supported now
 	Enabled     bool
 	Environment map[string]string
 	Global      GlobalSetting

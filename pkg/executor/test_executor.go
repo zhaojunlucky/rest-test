@@ -7,6 +7,6 @@ import (
 	"github.com/zhaojunlucky/rest-test/pkg/report"
 )
 
-type TestExecutor[T any] interface {
-	Execute(ctx *core.RestTestContext, env env.Env, global *model.GlobalSetting, testDef *T) (report.TestReport[T], error)
+type TestExecutor[T any, R any] interface {
+	Execute(ctx *core.RestTestContext, env env.Env, global *model.GlobalSetting, testDef *T, testExecResult *R) (report.TestReport[T], error)
 }

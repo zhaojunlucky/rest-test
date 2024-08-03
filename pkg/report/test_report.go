@@ -1,9 +1,9 @@
 package report
 
 const (
-	Passed  = "Passed"
-	Skipped = "Skipped"
-	Failed  = "Failed"
+	ConfigError = "ConfigError"
+	Skipped     = "Skipped"
+	Completed   = "Completed"
 )
 
 type TestReport[T any] interface {
