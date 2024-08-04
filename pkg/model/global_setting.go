@@ -1,6 +1,9 @@
 package model
 
-import "github.com/zhaojunlucky/golib/pkg/collection"
+import (
+	"github.com/zhaojunlucky/golib/pkg/collection"
+	"github.com/zhaojunlucky/rest-test/pkg/core"
+)
 
 type GlobalSetting struct {
 	Headers map[string]string
@@ -43,6 +46,24 @@ func (g *GlobalSetting) With(global *GlobalSetting) *GlobalSetting {
 		Headers: g.mergeHeaders(global.Headers),
 		DataDir: g.mergeDataDir(global.DataDir),
 	}
+}
+
+func (g *GlobalSetting) Expand(js core.JSEnvExpander) (*GlobalSetting, error) {
+
+	global := &GlobalSetting{}
+
+	var err error
+	global.DataDir, err = js.Expand(g.DataDir)
+	if err != nil {
+		return nil, err
+	}
+
+	global.Headers, err = js.ExpandMap(g.Headers)
+	if err != nil {
+		return nil, err
+	}
+
+	return global, nil
 }
 
 func (g *GlobalSetting) mergeHeaders(headers map[string]string) map[string]string {

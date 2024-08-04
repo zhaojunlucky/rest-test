@@ -18,31 +18,31 @@ type RestTestResponseFileBody struct {
 	Sha256          string
 }
 
-func (d RestTestResponseFileBody) Validate(ctx *core.RestTestContext, resp *http.Response) error {
+func (d RestTestResponseFileBody) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
 	if d.Length != math.MinInt && d.Length != resp.ContentLength {
-		return fmt.Errorf("invalid content length: %d, expect %d", resp.ContentLength, d.Length)
+		return "", fmt.Errorf("invalid content length: %d, expect %d", resp.ContentLength, d.Length)
 	}
 
 	if d.Min != math.MinInt && d.Min > resp.ContentLength {
-		return fmt.Errorf("invalid content length: %d, expect >= %d", resp.ContentLength, d.Min)
+		return "", fmt.Errorf("invalid content length: %d, expect >= %d", resp.ContentLength, d.Min)
 	}
 
 	if d.Max != math.MinInt && d.Max < resp.ContentLength {
-		return fmt.Errorf("invalid content length: %d, expect <= %d", resp.ContentLength, d.Max)
+		return "", fmt.Errorf("invalid content length: %d, expect <= %d", resp.ContentLength, d.Max)
 	}
 
 	if d.Sha256 != "" {
 		realSha256, err := d.CalcSha256(resp.Body)
 
 		if err != nil {
-			return err
+			return "", err
 		}
 
 		if realSha256 != d.Sha256 {
-			return fmt.Errorf("invalid content sha256: %s, expect %s", realSha256, d.Sha256)
+			return "", fmt.Errorf("invalid content sha256: %s, expect %s", realSha256, d.Sha256)
 		}
 	}
-	return nil
+	return "", nil
 }
 
 func (d RestTestResponseFileBody) Parse(mapWrapper *collection.MapWrapper) error {

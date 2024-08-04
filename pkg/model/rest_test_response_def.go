@@ -46,6 +46,6 @@ func (t RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 
 }
 
-func (t RestTestResponseDef) Validate(ctx *core.RestTestContext, resp *http.Response) error {
+func (t RestTestResponseDef) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
 	return t.Body.Validate(ctx, resp)
 }

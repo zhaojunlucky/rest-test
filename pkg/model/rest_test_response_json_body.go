@@ -1,13 +1,16 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/zhaojunlucky/golib/pkg/collection"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"golang.org/x/exp/maps"
+	"io"
 	"math"
 	"net/http"
 	"reflect"
+	"unicode"
 )
 
 const OR = "or"
@@ -21,9 +24,52 @@ type RestTestResponseJSONBody struct {
 	Validators          map[string]any
 }
 
-func (d RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *http.Response) error {
-	return nil
+func (d RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	bodyStr := string(data)
+	for _, r := range bodyStr {
+		if unicode.IsSpace(r) {
+			continue
+		}
+
+		if r == '{' {
+			if d.Array {
+				return nil, fmt.Errorf("invalid json body, must be array, but got object")
+			}
+			break
+		} else if r == '[' {
+			if !d.Array {
+				return nil, fmt.Errorf("invalid json body, must be object, but got array")
+			}
+		} else {
+			return nil, fmt.Errorf("invalid json body, must start with [ or {, but got %s", string(r))
+		}
+	}
+
+	if d.Array {
+		var arr []any
+		err = json.Unmarshal(data, &arr)
+		if err != nil {
+			return nil, err
+		}
+
+		if d.Length != math.MinInt && d.Length != len(arr) {
+			return nil, fmt.Errorf("invalid JSON Array length: %d, expect %d", len(arr), d.Length)
+		}
+		return d.validate(arr)
+	} else {
+		var obj map[string]any
+		err = json.Unmarshal(data, &obj)
+		if err != nil {
+			return nil, err
+		}
+		return d.validate(obj)
+	}
 }
+
 func (d RestTestResponseJSONBody) Parse(mapWrapper *collection.MapWrapper) error {
 
 	if mapWrapper.Has("array") {

@@ -5,6 +5,8 @@ const (
 	DependencyError = "DependencyError"
 	Skipped         = "Skipped"
 	Completed       = "Completed"
+	InitError       = "InitError"
+	ExecutionError  = "ExecutionError"
 )
 
 type TestReport[T any] interface {

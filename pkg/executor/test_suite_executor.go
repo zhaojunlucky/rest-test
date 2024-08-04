@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/zhaojunlucky/golib/pkg/env"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
-	"github.com/zhaojunlucky/rest-test/pkg/core/execution"
+	"github.com/zhaojunlucky/rest-test/pkg/execution"
 	"github.com/zhaojunlucky/rest-test/pkg/model"
 	"github.com/zhaojunlucky/rest-test/pkg/report"
 	"time"
@@ -55,11 +55,12 @@ func (t *TestSuiteExecutor) Execute(ctx *core.RestTestContext, environ env.Env, 
 			}
 		}
 	}
-
+	testSuiteCases := NewTestSuiteCase()
 	start := time.Now()
+
 	for _, testCaseExecResult := range testSuiteExecResult.TestCasesExecResults {
 		newEnv := env.NewReadWriteEnv(environ, testSuiteDef.Environment)
-		testCaseReport := t.testCaseExecutor.Execute(ctx, newEnv, global, testCaseExecResult)
+		testCaseReport := t.testCaseExecutor.Execute(ctx, newEnv, global, testCaseExecResult, testSuiteCases)
 
 		suiteReport.ExecutionTime += testCaseReport.ExecutionTime
 		suiteReport.AddTestCaseReport(testCaseReport)
@@ -79,7 +80,7 @@ func (t *TestSuiteExecutor) Prepare(ctx *execution.TestPlanExecutionResult, def 
 		TestPlanExecutionResult:   ctx,
 	}
 	ctx.AddTestSuiteExecResults(testSuiteExecResult)
-	t.testCaseExecutor = &TestCaseExecutor{}
+	t.testCaseExecutor = NewTestCaseExecutor()
 
 	for _, testCaseDef := range def.Cases {
 		if err := t.testCaseExecutor.Prepare(testSuiteExecResult, testCaseDef); err != nil {
@@ -109,4 +110,62 @@ func (t *TestSuiteExecutor) Validate(result *execution.TestSuiteExecutionResult)
 	}
 
 	return nil
+}
+
+func (t *TestSuiteExecutor) ExecuteSuite(osEnv env.Env, testSuiteDef *model.TestSuiteDef) (*report.TestSuiteReport, error) {
+
+	testSuiteExecCtx, err := t.prepare(testSuiteDef)
+	if testSuiteExecCtx == nil {
+		return nil, fmt.Errorf("failed to prepare test plan: %v", err)
+	}
+
+	testSuiteExecCtx.TestSuiteReport = &report.TestSuiteReport{
+		TestSuite: testSuiteDef,
+	}
+
+	suiteReport := testSuiteExecCtx.TestSuiteReport
+	if err != nil {
+		suiteReport.Error = err
+		suiteReport.Status = report.ConfigError
+		return suiteReport, err
+	}
+
+	if err = t.Validate(testSuiteExecCtx); err != nil {
+		suiteReport.Error = err
+		suiteReport.Status = report.ConfigError
+		return suiteReport, err
+	}
+	ctx := &core.RestTestContext{}
+	planEnv := env.NewReadWriteEnv(osEnv, testSuiteDef.Environment)
+
+	t.Execute(ctx, planEnv, &testSuiteDef.Global, testSuiteExecCtx)
+
+	start := time.Now()
+
+	suiteReport.ExecutionTime = time.Since(start).Seconds()
+	suiteReport.TotalTime = time.Since(start).Seconds()
+	suiteReport.Status = report.Completed
+	return suiteReport, nil
+}
+
+func (t *TestSuiteExecutor) prepare(def *model.TestSuiteDef) (*execution.TestSuiteExecutionResult, error) {
+	testSuiteExecResult := &execution.TestSuiteExecutionResult{
+		TestSuiteDef:              def,
+		NamedTestCasesExecResults: make(map[string]*execution.TestCaseExecutionResult),
+		TestPlanExecutionResult:   nil,
+	}
+	t.testCaseExecutor = NewTestCaseExecutor()
+	for _, testCaseDef := range def.Cases {
+		if err := t.testCaseExecutor.Prepare(testSuiteExecResult, testCaseDef); err != nil {
+			return nil, err
+		}
+	}
+
+	return testSuiteExecResult, nil
+}
+
+func NewTestSuiteExecutor() *TestSuiteExecutor {
+	return &TestSuiteExecutor{
+		testCaseExecutor: NewTestCaseExecutor(),
+	}
 }

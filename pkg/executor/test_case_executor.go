@@ -2,33 +2,73 @@ package executor
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/golib/pkg/env"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
-	"github.com/zhaojunlucky/rest-test/pkg/core/execution"
+	"github.com/zhaojunlucky/rest-test/pkg/execution"
 	"github.com/zhaojunlucky/rest-test/pkg/model"
 	"github.com/zhaojunlucky/rest-test/pkg/report"
+	"net/http"
 	"time"
 )
 
 type TestCaseExecutor struct {
 }
 
-func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, global *model.GlobalSetting, testCaseExecResult *execution.TestCaseExecutionResult) *report.TestCaseReport {
-
-	//if err != nil {
-	//	log.Errorf("test case %s failed, error: %v", testCaseDef.Name, err)
-	//} else {
-	//	log.Infof("test case %s passed", testCaseDef.Name)
-	//}
-	testCaseReport := report.TestCaseReport{
+func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, global *model.GlobalSetting, testCaseExecResult *execution.TestCaseExecutionResult,
+	testSuiteCase *TestSuiteCase) *report.TestCaseReport {
+	testCaseReport := &report.TestCaseReport{
 		TestCase: testCaseExecResult.TestCaseDef,
 	}
+	testCaseExecResult.TestCaseReport = testCaseReport
 
-	testCaseExecResult.TestCaseReport = &testCaseReport
+	testCaseDef := testCaseExecResult.TestCaseDef
+
+	if !testCaseDef.Enabled {
+		testCaseReport.Status = report.Skipped
+		return testCaseReport
+	}
+
+	env.SetAll(testCaseDef.Environment)
+
+	js, err := NewJSScriptler(env, testSuiteCase)
+	if err != nil {
+		testCaseReport.Status = report.InitError
+		testCaseReport.Error = err
+		return testCaseReport
+	}
 
 	start := time.Now()
+	global, err = global.Expand(js)
+	if err != nil {
+		testCaseReport.Error = err
+		testCaseReport.Status = report.InitError
+		return testCaseReport
+	}
+
+	resp, err := t.performHTTPRequest(ctx, global, testCaseDef, js)
+	if err != nil {
+		testCaseReport.Error = err
+		testCaseReport.Status = report.ExecutionError
+		return testCaseReport
+	}
+	body, err := testCaseExecResult.TestCaseDef.Response.Validate(ctx, resp)
+	if err != nil {
+		testCaseReport.Error = err
+		testCaseReport.Status = report.ExecutionError
+		return testCaseReport
+	}
+	testCaseReport.TotalTime = time.Since(start).Seconds()
+	testCaseReport.Status = report.Completed
+	testCaseReport.Error = nil
+
 	testCaseReport.ExecutionTime = time.Since(start).Seconds()
-	return &testCaseReport
+
+	err = testSuiteCase.Add(testCaseExecResult, body)
+	if err != nil {
+		log.Error(err)
+	}
+	return testCaseReport
 }
 
 func (t *TestCaseExecutor) Prepare(ctx *execution.TestSuiteExecutionResult, def model.TestCaseDef) error {
@@ -47,4 +87,36 @@ func (t *TestCaseExecutor) Prepare(ctx *execution.TestSuiteExecutionResult, def 
 func (t *TestCaseExecutor) Validate(result *execution.TestCaseExecutionResult) error {
 
 	return nil
+}
+
+func (t *TestCaseExecutor) performHTTPRequest(ctx *core.RestTestContext, global *model.GlobalSetting, def *model.TestCaseDef, js *JSScriptler) (*http.Response, error) {
+	url, err := js.Expand(def.Request.Url)
+	if err != nil {
+		return nil, err
+	}
+
+	bodyReader, err := def.Request.Body.GetBody(global.DataDir, js)
+	if err != nil {
+		return nil, err
+	}
+	var req *http.Request
+	req, err = http.NewRequest(def.Request.Method, url, bodyReader)
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range global.Headers {
+		req.Header.Add(k, v)
+	}
+	for k, v := range def.Request.Parameters {
+		req.URL.Query().Add(k, v)
+	}
+	for k, v := range def.Request.Headers {
+		req.Header.Add(k, v)
+	}
+	return http.DefaultClient.Do(req)
+}
+
+func NewTestCaseExecutor() *TestCaseExecutor {
+	return &TestCaseExecutor{}
 }

@@ -8,5 +8,5 @@ import (
 
 type RestTestResponseBodyValidator interface {
 	Parse(mapWrapper *collection.MapWrapper) error
-	Validate(ctx *core.RestTestContext, resp *http.Response) error
+	Validate(ctx *core.RestTestContext, resp *http.Response) (any, error)
 }

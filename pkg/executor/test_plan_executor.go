@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/zhaojunlucky/golib/pkg/env"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
-	"github.com/zhaojunlucky/rest-test/pkg/core/execution"
+	"github.com/zhaojunlucky/rest-test/pkg/execution"
 	"github.com/zhaojunlucky/rest-test/pkg/model"
 	"github.com/zhaojunlucky/rest-test/pkg/report"
 	"time"
@@ -15,7 +15,6 @@ type TestPlanExecutor struct {
 }
 
 func (t *TestPlanExecutor) ExecutePlan(environ env.Env, testPlanDef *model.TestPlanDef) (*report.TestPlanReport, error) {
-	t.testSuiteExecutor = &TestSuiteExecutor{}
 
 	testPlanExecCtx, err := t.Prepare(testPlanDef)
 	if testPlanExecCtx == nil {
@@ -108,5 +107,7 @@ func (t *TestPlanExecutor) Validate(ctx *execution.TestPlanExecutionResult) erro
 }
 
 func NewTestPlanExecutor() *TestPlanExecutor {
-	return &TestPlanExecutor{}
+	return &TestPlanExecutor{
+		testSuiteExecutor: &TestSuiteExecutor{},
+	}
 }

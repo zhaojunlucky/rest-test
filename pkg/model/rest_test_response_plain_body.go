@@ -16,22 +16,25 @@ type RestTestResponsePlainBody struct {
 	Regex           *regexp.Regexp
 }
 
-func (d RestTestResponsePlainBody) Validate(ctx *core.RestTestContext, resp *http.Response) error {
+func (d RestTestResponsePlainBody) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	bodyStr := string(data)
+
 	if d.Length != math.MinInt && d.Length != resp.ContentLength {
-		return fmt.Errorf("invalid content length: %d, expect %d", resp.ContentLength, d.Length)
+		return bodyStr, fmt.Errorf("invalid content length: %d, expect %d", resp.ContentLength, d.Length)
 	}
 
 	if d.Regex != nil {
-		data, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		if !d.Regex.MatchString(string(data)) {
-			return fmt.Errorf("invalid content, expect match %s", d.Regex)
+
+		if !d.Regex.MatchString(bodyStr) {
+			return bodyStr, fmt.Errorf("invalid content, expect match %s", d.Regex)
 		}
 	}
 
-	return nil
+	return bodyStr, nil
 }
 
 func (d RestTestResponsePlainBody) Parse(mapWrapper *collection.MapWrapper) error {

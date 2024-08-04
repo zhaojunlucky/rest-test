@@ -7,7 +7,7 @@ environment:
   API_PREFIX: http://localhost:8080/api
   API_TOKEN: some_token
   GH_SERVER: github.com
-global:
+global: # dynamic
   headers:
     Authorization: Bearer ${env.API_TOKEN}
     Content-Type: application/json
@@ -17,7 +17,7 @@ cases:
     enabled: true # default is true
     name: list
     request:
-      url: github
+      url: github # dynamic
       method: GET # default is get
     response:
       code: 200 #
@@ -44,7 +44,7 @@ cases:
                 ge: 1
   - desc: get github server
     request:
-      url: github/${create.resp.id}
+      url: github/${ctx.create.resp.id}
       method: GET
     response:
       code: 200
@@ -53,7 +53,7 @@ cases:
         array: false
         validators:
           and:
-            - $.id: ${create.resp.id}
+            - $.id: ${ctx.create.resp.id}
         containsRequestJSON: create
   - desc: create duplicate github server
     requestRef: create
@@ -71,8 +71,6 @@ cases:
       method: POST
       body:
         file: create_gh_server2.json
-        env:
-          webUrl: https://${env.GH_SERVER}
         script: |
           let data = JSON.parse(body)
           data.name = 'test2'
@@ -85,7 +83,7 @@ cases:
         array: false
         validators:
           and:
-            - $.id: ${create.resp.id + 1}
+            - $.id: ${ctx.create.resp.id + 1}
   - desc: list github servers
     requestRef: list
     response:
@@ -97,11 +95,11 @@ cases:
           and:
             - $.entryCount: 2
             - $.entries.length: 2
-            - $.entries[0].id: ${create.resp.id}
-            - $.entries[1].id: ${create2.resp.id}
+            - $.entries[0].id: ${ctx.create.resp.id}
+            - $.entries[1].id: ${ctx.create2.resp.id}
   - desc: delete github server
     request:
-      url: github/${create2.resp.id}
+      url: github/${ctx.create2.resp.id}
       method: DELETE
     response:
       code: 204
@@ -116,13 +114,13 @@ cases:
           and:
             - $.entryCount: 1
             - $.entries.length: 1
-            - $.entries[0].id: ${create.resp.id}
+            - $.entries[0].id: ${ctx.create.resp.id}
         script: if (body.entries[0].name != 'xxx') {
           throw new Error("invalid name")
           }
   - desc: get github server
     request:
-      url: github/${create2.resp.id}
+      url: github/${ctx.create2.resp.id}
       method: GET
     response:
       code: 404

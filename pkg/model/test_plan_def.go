@@ -17,7 +17,7 @@ type TestPlanDef struct {
 	Environment map[string]string
 	Global      GlobalSetting
 	Suites      []TestSuiteDef
-	path        string
+	path        string // static
 }
 
 func (t *TestPlanDef) Parse(file string) error {
