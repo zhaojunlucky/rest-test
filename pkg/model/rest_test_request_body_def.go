@@ -117,7 +117,11 @@ func (d RestTestRequestBodyDef) GetBody(dataDir string, js core.JSEnvExpander) (
 	}
 
 	if len(d.Script) > 0 {
-		return js.RunScript(d.Script)
+		body, err = js.RunScript(d.Script)
+
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return strings.NewReader(body), nil

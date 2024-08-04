@@ -175,3 +175,11 @@ func (d RestTestResponseJSONBody) checkValidators(validators map[string]any, par
 		return fmt.Errorf("value is not a slice/array/map")
 	}
 }
+
+func (d RestTestResponseJSONBody) validate(obj any) (any, error) {
+	jsonValidator := core.NewJSONValidator()
+	if err := jsonValidator.Validate(obj, d.Validators); err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
