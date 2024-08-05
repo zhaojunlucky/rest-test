@@ -97,6 +97,9 @@ cases:
             - $.entries.length: 2
             - $.entries[0].id: ${ctx.create.resp.id}
             - $.entries[1].id: ${ctx.create2.resp.id}
+            - or:
+                - $.entries[0].name: 'test'
+                - $.entries[1].name: 'test2'
   - desc: delete github server
     request:
       url: github/${ctx.create2.resp.id}

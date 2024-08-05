@@ -40,5 +40,10 @@ func (t *TestSuiteReport) GetStatus() string {
 }
 
 func (t *TestSuiteReport) HasPassed() bool {
-
+	for _, testCaseReport := range t.testCaseReports {
+		if testCaseReport.GetStatus() != Completed || testCaseReport.GetError() != nil {
+			return false
+		}
+	}
+	return true
 }
