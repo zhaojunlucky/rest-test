@@ -30,21 +30,23 @@ func (j *JSONValidator) Validate(obj any, validators map[string]any) error {
 func (j *JSONValidator) validate(obj any, validators map[string]any) error {
 
 	for k, v := range validators {
-		valType := reflect.ValueOf(v)
+		valType := reflect.TypeOf(v)
 		isArray := valType.Kind() == reflect.Array || valType.Kind() == reflect.Slice
 		if strings.EqualFold(k, "and") || strings.EqualFold(k, "or") {
-			if isArray && valType.Type().Key().Kind() == reflect.Map {
-				listValidators := v.([]map[string]any)
+			if isArray && valType.Elem().Kind() == reflect.Map {
+				listValidators, ok := v.([]map[string]any)
+				if !ok {
+					return fmt.Errorf("unsupported validator: %s need map[string]any", k)
+				}
 				opExecutor := JSONOperator{
 					expectCount: len(listValidators),
 					OP:          k,
 				}
-				for i := 0; i < valType.Len(); i++ {
-					eleVal := valType.Index(i)
-					if eleVal.Type().Key().Kind() != reflect.String {
-						return fmt.Errorf("unsupported validator: %s with [%d]map[%d]%T", k, i, eleVal.Type().Key(), eleVal.Type().Elem())
+				for i := 0; i < len(listValidators); i++ {
+					err := opExecutor.Add(j.validate(obj, listValidators[i]))
+					if err != nil {
+						return err
 					}
-					opExecutor.Add(j.validate(obj, listValidators[i]))
 					if opExecutor.Passed() {
 						return nil
 					}
@@ -59,11 +61,7 @@ func (j *JSONValidator) validate(obj any, validators map[string]any) error {
 			if err != nil {
 				return errors.Join(fmt.Errorf("failed to get json path: %s", k), err)
 			}
-			valArr := v
-			if !isArray {
-				valArr = []any{v}
-			}
-			if !reflect.DeepEqual(jsonValue, valArr) {
+			if !reflect.DeepEqual(jsonValue, v) {
 				return fmt.Errorf("failed to verify json path %s, got %v, want %v", k, jsonValue, valType)
 			} else {
 				return nil
@@ -84,12 +82,17 @@ type JSONOperator struct {
 	successCount int
 }
 
-func (j *JSONOperator) Add(err error) {
+func (j *JSONOperator) Add(err error) error {
 	if err != nil {
 		j.errors = append(j.errors, err)
 	} else {
 		j.successCount++
 	}
+
+	if len(j.errors)+j.successCount > j.expectCount {
+		return fmt.Errorf("failed to verify json path, got %d results, want %d", j.successCount+len(j.errors), j.expectCount)
+	}
+	return nil
 }
 
 func (j *JSONOperator) GetErrors() error {
