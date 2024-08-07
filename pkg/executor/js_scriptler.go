@@ -6,6 +6,7 @@ import (
 	"github.com/dop251/goja_nodejs/console"
 	"github.com/dop251/goja_nodejs/require"
 	"github.com/zhaojunlucky/golib/pkg/env"
+	"strings"
 )
 
 type JSScriptler struct {
@@ -13,6 +14,18 @@ type JSScriptler struct {
 }
 
 func (js *JSScriptler) Expand(val string) (string, error) {
+	val = strings.TrimSpace(val)
+	if val == "" {
+		return "", nil
+	}
+	if val[0] == '`' || val[len(val)-1] == '`' {
+		return "", fmt.Errorf("cannot expand %s string with start or end backticks", val)
+	}
+
+	if strings.Contains(val, "\n") {
+		return "", fmt.Errorf("cannot expand %s string with new line character", val)
+	}
+
 	o, err := js.vm.RunString(fmt.Sprintf("`%s`", val))
 	if err != nil {
 		return "", err
@@ -37,7 +50,7 @@ func (js *JSScriptler) ExpandMap(val map[string]string) (map[string]string, erro
 }
 
 func (js *JSScriptler) Set(key string, val any) error {
-	return js.vm.GlobalObject().Set("env", val)
+	return js.vm.GlobalObject().Set(key, val)
 }
 
 func (js *JSScriptler) RunScript(script string) (string, error) {
@@ -68,7 +81,7 @@ func (js *JSScriptler) RunScriptWithBody(script string, body string) (string, er
 	return str, nil
 }
 
-func NewJSScriptler(env env.Env, testSuiteCases *TestSuiteCase) (*JSScriptler, error) {
+func NewJSScriptler(env env.Env, testSuiteCases *TestSuiteCaseContext) (*JSScriptler, error) {
 
 	vm := goja.New()
 	vm.SetFieldNameMapper(goja.UncapFieldNameMapper())

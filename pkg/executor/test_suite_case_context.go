@@ -5,17 +5,17 @@ import (
 	"github.com/zhaojunlucky/rest-test/pkg/execution"
 )
 
-type TestSuiteCase struct {
+type TestSuiteCaseContext struct {
 	CaseResult map[string]map[string]any
 }
 
-func NewTestSuiteCase() *TestSuiteCase {
-	return &TestSuiteCase{
+func NewTestSuiteCaseContext() *TestSuiteCaseContext {
+	return &TestSuiteCaseContext{
 		CaseResult: make(map[string]map[string]any),
 	}
 }
 
-func (t *TestSuiteCase) Add(caseResult *execution.TestCaseExecutionResult, body any) error {
+func (t *TestSuiteCaseContext) Add(caseResult *execution.TestCaseExecutionResult, body any) error {
 	if !caseResult.Executed {
 		return fmt.Errorf("case %s not executed", caseResult.TestCaseDef.Name)
 	}

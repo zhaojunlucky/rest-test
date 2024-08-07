@@ -16,7 +16,7 @@ type TestCaseExecutor struct {
 }
 
 func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, global *model.GlobalSetting, testCaseExecResult *execution.TestCaseExecutionResult,
-	testSuiteCase *TestSuiteCase) *report.TestCaseReport {
+	testSuiteCase *TestSuiteCaseContext) *report.TestCaseReport {
 	testCaseReport := &report.TestCaseReport{
 		TestCase: testCaseExecResult.TestCaseDef,
 	}

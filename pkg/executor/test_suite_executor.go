@@ -55,7 +55,7 @@ func (t *TestSuiteExecutor) Execute(ctx *core.RestTestContext, environ env.Env, 
 			}
 		}
 	}
-	testSuiteCases := NewTestSuiteCase()
+	testSuiteCases := NewTestSuiteCaseContext()
 	start := time.Now()
 
 	for _, testCaseExecResult := range testSuiteExecResult.TestCasesExecResults {
