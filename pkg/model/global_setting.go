@@ -6,8 +6,9 @@ import (
 )
 
 type GlobalSetting struct {
-	Headers map[string]string
-	DataDir string
+	Headers   map[string]string
+	DataDir   string
+	APIPrefix string
 }
 
 func (g *GlobalSetting) Parse(mapWrapper *collection.MapWrapper) error {
@@ -34,6 +35,13 @@ func (g *GlobalSetting) Parse(mapWrapper *collection.MapWrapper) error {
 		}
 	}
 
+	if globalWrapper.Has("apiPrefix") {
+		err = globalWrapper.Get("apiPrefix", &g.APIPrefix)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -43,8 +51,9 @@ func (g *GlobalSetting) With(global *GlobalSetting) *GlobalSetting {
 	}
 
 	return &GlobalSetting{
-		Headers: g.mergeHeaders(global.Headers),
-		DataDir: g.mergeDataDir(global.DataDir),
+		Headers:   g.mergeHeaders(global.Headers),
+		DataDir:   g.mergeDataDir(global.DataDir),
+		APIPrefix: g.mergeAPIPrefix(global.APIPrefix),
 	}
 }
 
@@ -63,6 +72,10 @@ func (g *GlobalSetting) Expand(js core.JSEnvExpander) (*GlobalSetting, error) {
 		return nil, err
 	}
 
+	global.APIPrefix, err = js.Expand(g.APIPrefix)
+	if err != nil {
+		return nil, err
+	}
 	return global, nil
 }
 
@@ -84,4 +97,11 @@ func (g *GlobalSetting) mergeDataDir(dataDir string) string {
 		return dataDir
 	}
 	return g.DataDir
+}
+
+func (g *GlobalSetting) mergeAPIPrefix(prefix string) string {
+	if len(prefix) > 0 {
+		return prefix
+	}
+	return g.APIPrefix
 }

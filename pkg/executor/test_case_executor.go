@@ -9,6 +9,7 @@ import (
 	"github.com/zhaojunlucky/rest-test/pkg/model"
 	"github.com/zhaojunlucky/rest-test/pkg/report"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -90,9 +91,16 @@ func (t *TestCaseExecutor) Validate(result *execution.TestCaseExecutionResult) e
 }
 
 func (t *TestCaseExecutor) performHTTPRequest(ctx *core.RestTestContext, global *model.GlobalSetting, def *model.TestCaseDef, js *JSScriptler) (*http.Response, error) {
-	url, err := js.Expand(def.Request.Url)
+	url, err := js.Expand(def.Request.URL)
 	if err != nil {
 		return nil, err
+	}
+
+	if !strings.HasPrefix(url, "http") {
+		if !strings.HasPrefix(global.APIPrefix, "http") {
+			return nil, fmt.Errorf("apiPrefix or url must be http or https")
+		}
+		url = fmt.Sprintf("%s/%s", global.APIPrefix, url)
 	}
 
 	bodyReader, err := def.Request.Body.GetBody(global.DataDir, js)

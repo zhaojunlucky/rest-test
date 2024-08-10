@@ -17,11 +17,10 @@ type RestTestRequestBodyDef struct {
 	Environment map[string]string
 	Body        string
 	Script      string
-	parsed      bool
+	bodyValid   bool
 }
 
 func (d *RestTestRequestBodyDef) Parse(bodyObj any) error {
-	d.parsed = true
 	if bodyObj == nil {
 		return nil
 	}
@@ -29,6 +28,7 @@ func (d *RestTestRequestBodyDef) Parse(bodyObj any) error {
 
 	if bodyType.Kind() == reflect.String {
 		d.Body = bodyObj.(string)
+		d.bodyValid = true
 		return nil
 	} else if bodyType.Kind() == reflect.Map {
 
@@ -37,20 +37,12 @@ func (d *RestTestRequestBodyDef) Parse(bodyObj any) error {
 			return err
 		}
 		return d.parse(mapWrapper)
-	} else {
-		bodyStrType := reflect.ValueOf(d.Body)
-
-		if bodyType.ConvertibleTo(bodyStrType.Type()) {
-			d.Body = bodyStrType.Convert(bodyType).Interface().(string)
-			return nil
-		}
-
 	}
 	return fmt.Errorf("unsupported body type: %v", bodyType)
 }
 
 func (d *RestTestRequestBodyDef) HasBody() bool {
-	return d.parsed
+	return d.bodyValid
 }
 
 func (d *RestTestRequestBodyDef) parse(mapWrapper *collection.MapWrapper) error {
@@ -89,11 +81,12 @@ func (d *RestTestRequestBodyDef) parse(mapWrapper *collection.MapWrapper) error 
 			return err
 		}
 	}
+	d.bodyValid = true
 	return nil
 }
 
 func (d *RestTestRequestBodyDef) GetBody(dataDir string, js core.JSEnvExpander) (io.Reader, error) {
-	if !d.parsed {
+	if !d.bodyValid {
 		return nil, nil
 	}
 	var file io.Reader

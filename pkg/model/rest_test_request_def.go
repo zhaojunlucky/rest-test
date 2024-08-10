@@ -3,9 +3,9 @@ package model
 import "github.com/zhaojunlucky/golib/pkg/collection"
 
 type RestTestRequestDef struct {
-	Url        string
+	URL        string
 	Method     string
-	Body       RestTestRequestBodyDef
+	Body       *RestTestRequestBodyDef
 	Headers    map[string]string
 	Parameters map[string]string
 }
@@ -16,7 +16,7 @@ func (t *RestTestRequestDef) Parse(mapWrapper *collection.MapWrapper) error {
 		return err
 	}
 
-	err = reqWrapper.Get("url", &t.Url)
+	err = reqWrapper.Get("url", &t.URL)
 	if err != nil {
 		return err
 	}
@@ -40,7 +40,7 @@ func (t *RestTestRequestDef) Parse(mapWrapper *collection.MapWrapper) error {
 		}
 	}
 
-	t.Body = RestTestRequestBodyDef{}
+	t.Body = &RestTestRequestBodyDef{}
 	if reqWrapper.Has("body") {
 		var bodyObj any
 		bodyObj, err = reqWrapper.GetAny("body")
