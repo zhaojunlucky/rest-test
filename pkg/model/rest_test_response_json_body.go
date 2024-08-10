@@ -24,7 +24,7 @@ type RestTestResponseJSONBody struct {
 	Validators          map[string]any
 }
 
-func (d RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
+func (d *RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -70,7 +70,7 @@ func (d RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *http
 	}
 }
 
-func (d RestTestResponseJSONBody) Parse(mapWrapper *collection.MapWrapper) error {
+func (d *RestTestResponseJSONBody) Parse(mapWrapper *collection.MapWrapper) error {
 
 	if mapWrapper.Has("array") {
 		err := mapWrapper.Get("array", &d.Array)
@@ -125,7 +125,7 @@ func (d RestTestResponseJSONBody) Parse(mapWrapper *collection.MapWrapper) error
 	return d.checkValidators(d.Validators, "")
 }
 
-func (d RestTestResponseJSONBody) checkValidators(validators map[string]any, parent string) error {
+func (d *RestTestResponseJSONBody) checkValidators(validators map[string]any, parent string) error {
 	if len(validators) == 0 {
 		return nil
 	}
@@ -161,7 +161,7 @@ func (d RestTestResponseJSONBody) checkValidators(validators map[string]any, par
 	}
 }
 
-func (d RestTestResponseJSONBody) validate(obj any) (any, error) {
+func (d *RestTestResponseJSONBody) validate(obj any) (any, error) {
 	jsonValidator := core.NewJSONValidator()
 	if err := jsonValidator.Validate(obj, d.Validators); err != nil {
 		return nil, err
@@ -169,7 +169,7 @@ func (d RestTestResponseJSONBody) validate(obj any) (any, error) {
 	return obj, nil
 }
 
-func (d RestTestResponseJSONBody) checkOPValidators(listEle []any, path string) error {
+func (d *RestTestResponseJSONBody) checkOPValidators(listEle []any, path string) error {
 
 	for i, child := range listEle {
 		childPath := fmt.Sprintf("%s[%d]", path, i)
@@ -187,7 +187,7 @@ func (d RestTestResponseJSONBody) checkOPValidators(listEle []any, path string) 
 	return nil
 }
 
-func (d RestTestResponseJSONBody) checkValueValidators(validators map[string]any, path string) error {
+func (d *RestTestResponseJSONBody) checkValueValidators(validators map[string]any, path string) error {
 	for k, v := range validators {
 		childPath := fmt.Sprintf("%s -> %s", path, k)
 		valType := reflect.TypeOf(v)

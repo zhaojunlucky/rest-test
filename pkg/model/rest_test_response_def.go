@@ -10,10 +10,10 @@ type RestTestResponseDef struct {
 	RestTestRequest *RestTestRequestDef
 	Code            int
 	ContentType     string
-	Body            RestTestResponseBodyDef
+	Body            *RestTestResponseBodyDef
 }
 
-func (t RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
+func (t *RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 	respWrapper, err := mapWrapper.GetChild("response")
 	if err != nil {
 		return err
@@ -34,7 +34,7 @@ func (t RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 		return err
 	}
 
-	t.Body = RestTestResponseBodyDef{
+	t.Body = &RestTestResponseBodyDef{
 		RestTestRequest: t.RestTestRequest,
 	}
 	err = t.Body.Parse(bodyObj)
@@ -46,6 +46,6 @@ func (t RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 
 }
 
-func (t RestTestResponseDef) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
+func (t *RestTestResponseDef) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
 	return t.Body.Validate(ctx, resp)
 }

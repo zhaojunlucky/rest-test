@@ -10,7 +10,7 @@ type RestTestRequestDef struct {
 	Parameters map[string]string
 }
 
-func (t RestTestRequestDef) Parse(mapWrapper *collection.MapWrapper) error {
+func (t *RestTestRequestDef) Parse(mapWrapper *collection.MapWrapper) error {
 	reqWrapper, err := mapWrapper.GetChild("request")
 	if err != nil {
 		return err

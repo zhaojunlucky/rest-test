@@ -20,7 +20,7 @@ type RestTestRequestBodyDef struct {
 	parsed      bool
 }
 
-func (d RestTestRequestBodyDef) Parse(bodyObj any) error {
+func (d *RestTestRequestBodyDef) Parse(bodyObj any) error {
 	d.parsed = true
 	if bodyObj == nil {
 		return nil
@@ -49,11 +49,11 @@ func (d RestTestRequestBodyDef) Parse(bodyObj any) error {
 	return fmt.Errorf("unsupported body type: %v", bodyType)
 }
 
-func (d RestTestRequestBodyDef) HasBody() bool {
+func (d *RestTestRequestBodyDef) HasBody() bool {
 	return d.parsed
 }
 
-func (d RestTestRequestBodyDef) parse(mapWrapper *collection.MapWrapper) error {
+func (d *RestTestRequestBodyDef) parse(mapWrapper *collection.MapWrapper) error {
 	if mapWrapper.Has("file") {
 		err := mapWrapper.Get("file", &d.File)
 		if err != nil {
@@ -92,7 +92,7 @@ func (d RestTestRequestBodyDef) parse(mapWrapper *collection.MapWrapper) error {
 	return nil
 }
 
-func (d RestTestRequestBodyDef) GetBody(dataDir string, js core.JSEnvExpander) (io.Reader, error) {
+func (d *RestTestRequestBodyDef) GetBody(dataDir string, js core.JSEnvExpander) (io.Reader, error) {
 	if !d.parsed {
 		return nil, nil
 	}

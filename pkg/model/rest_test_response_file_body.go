@@ -18,7 +18,7 @@ type RestTestResponseFileBody struct {
 	Sha256          string
 }
 
-func (d RestTestResponseFileBody) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
+func (d *RestTestResponseFileBody) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
 	if d.Length != math.MinInt && d.Length != resp.ContentLength {
 		return "", fmt.Errorf("invalid content length: %d, expect %d", resp.ContentLength, d.Length)
 	}
@@ -45,7 +45,7 @@ func (d RestTestResponseFileBody) Validate(ctx *core.RestTestContext, resp *http
 	return "", nil
 }
 
-func (d RestTestResponseFileBody) Parse(mapWrapper *collection.MapWrapper) error {
+func (d *RestTestResponseFileBody) Parse(mapWrapper *collection.MapWrapper) error {
 	if mapWrapper.Has("length") {
 		err := mapWrapper.Get("length", &d.Length)
 		if err != nil {
@@ -83,7 +83,7 @@ func (d RestTestResponseFileBody) Parse(mapWrapper *collection.MapWrapper) error
 	return nil
 }
 
-func (d RestTestResponseFileBody) CalcSha256(body io.ReadCloser) (string, error) {
+func (d *RestTestResponseFileBody) CalcSha256(body io.ReadCloser) (string, error) {
 	h := sha256.New()
 
 	var buf [4096]byte

@@ -12,7 +12,7 @@ type TestCaseDef struct {
 	Response    *RestTestResponseDef
 }
 
-func (t TestCaseDef) Parse(caseDef map[string]any) error {
+func (t *TestCaseDef) Parse(caseDef map[string]any) error {
 	mapWrapper := collection.NewMapWrapper(caseDef)
 
 	if mapWrapper.Has("name") {

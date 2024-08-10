@@ -16,7 +16,7 @@ type RestTestResponsePlainBody struct {
 	Regex           *regexp.Regexp
 }
 
-func (d RestTestResponsePlainBody) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
+func (d *RestTestResponsePlainBody) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
@@ -37,7 +37,7 @@ func (d RestTestResponsePlainBody) Validate(ctx *core.RestTestContext, resp *htt
 	return bodyStr, nil
 }
 
-func (d RestTestResponsePlainBody) Parse(mapWrapper *collection.MapWrapper) error {
+func (d *RestTestResponsePlainBody) Parse(mapWrapper *collection.MapWrapper) error {
 	if mapWrapper.Has("length") {
 		err := mapWrapper.Get("length", &d.Length)
 		if err != nil {

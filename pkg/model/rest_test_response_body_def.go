@@ -18,15 +18,19 @@ type RestTestResponseBodyDef struct {
 	BodyValidator   RestTestResponseBodyValidator
 }
 
-func (d RestTestResponseBodyDef) Parse(bodyObj any) error {
+func (d *RestTestResponseBodyDef) Parse(bodyObj any) error {
 	mapWrapper, err := collection.NewMapWrapperAny(bodyObj)
 	if err != nil {
 		return err
 	}
 
-	err = mapWrapper.Get("type", &d.Type)
-	if err != nil {
-		return err
+	if !mapWrapper.Has("type") {
+		d.Type = JSON
+	} else {
+		err = mapWrapper.Get("type", &d.Type)
+		if err != nil {
+			return err
+		}
 	}
 
 	if strings.EqualFold(JSON, d.Type) {
@@ -48,6 +52,6 @@ func (d RestTestResponseBodyDef) Parse(bodyObj any) error {
 	return d.BodyValidator.Parse(mapWrapper)
 }
 
-func (d RestTestResponseBodyDef) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
+func (d *RestTestResponseBodyDef) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
 	return d.BodyValidator.Validate(ctx, resp)
 }

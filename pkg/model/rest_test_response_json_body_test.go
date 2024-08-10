@@ -1,8 +1,10 @@
 package model
 
 import (
+	"github.com/stretchr/testify/assert"
 	"github.com/zhaojunlucky/golib/pkg/collection"
 	"gopkg.in/yaml.v3"
+	"math"
 	"testing"
 )
 
@@ -37,4 +39,9 @@ script: |
 	if err != nil {
 		t.Error(err)
 	}
+
+	assert.False(t, jsonBody.Array)
+	assert.False(t, jsonBody.ContainsRequestJSON)
+	assert.Equal(t, math.MinInt, jsonBody.Length)
+	assert.Equal(t, 1, len(jsonBody.Validators))
 }
