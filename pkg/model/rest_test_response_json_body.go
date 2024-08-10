@@ -129,50 +129,35 @@ func (d RestTestResponseJSONBody) checkValidators(validators map[string]any, par
 	if len(validators) == 0 {
 		return nil
 	}
-
 	keys := maps.Keys(validators)
+	var path string
+	if len(parent) > 0 {
+		path = fmt.Sprintf("%s -> %s", parent, keys[0])
 
-	if len(keys) > 1 {
-		return fmt.Errorf("only one validator is supported. But found multiple: %v", keys)
+	} else {
+		path = keys[0]
 	}
 
-	if keys[0] != AND && keys[0] != OR {
-		return fmt.Errorf("only %s and %s are supported. But found %s", AND, OR, keys[0])
+	if len(validators) > 1 {
+
+		for i := 0; i < len(keys); i++ {
+			if keys[i] == AND || keys[i] == OR {
+				return fmt.Errorf("path %s: can't mix operator %s or %s with value checker", path, AND, OR)
+			}
+		}
 	}
 
-	path := fmt.Sprintf("%s -> %s", parent, keys[0])
-	value := validators[keys[0]]
+	if keys[0] == AND || keys[0] == OR {
+		value := validators[keys[0]]
 
-	valType := reflect.TypeOf(value)
-
-	switch valType.Kind() {
-	case reflect.Slice, reflect.Array:
-		if valType.Elem().Kind() == reflect.String {
-			return nil
-		} else if valType.Elem().Kind() == reflect.Map {
-			mapList, ok := value.([]map[string]any)
-			if !ok {
-				return fmt.Errorf("list value of key %s[*] are not all maps", path)
-			}
-			for i, child := range mapList {
-				cType := reflect.TypeOf(child)
-				if cType.Key().Kind() != reflect.String {
-					return fmt.Errorf("SubMap key is not a string for key %s[%d]", path, i)
-				}
-				if err := d.checkValidators(child, fmt.Sprintf("%s[%d]", path, i)); err != nil {
-					return err
-				}
-			}
+		listEle, ok := value.([]any)
+		if !ok {
+			return fmt.Errorf("path %s: only slice and array are supported", path)
 		}
-		return fmt.Errorf("list value of key %s[*] are not all maps/string", path)
 
-	case reflect.Map:
-		if valType.Key().Kind() != reflect.String {
-			return fmt.Errorf("SubMap key is not a string for key %s", path)
-		}
-		return d.checkValidators(value.(map[string]any), path)
-	default:
-		return fmt.Errorf("value is not a slice/array/map")
+		return d.checkOPValidators(listEle, path)
+	} else {
+		return d.checkValueValidators(validators, parent)
 	}
 }
 
@@ -182,4 +167,50 @@ func (d RestTestResponseJSONBody) validate(obj any) (any, error) {
 		return nil, err
 	}
 	return obj, nil
+}
+
+func (d RestTestResponseJSONBody) checkOPValidators(listEle []any, path string) error {
+
+	for i, child := range listEle {
+		childPath := fmt.Sprintf("%s[%d]", path, i)
+		cType := reflect.TypeOf(child)
+		if cType.Kind() != reflect.Map {
+			return fmt.Errorf("%s is not a map", childPath)
+		}
+		if cType.Key().Kind() != reflect.String {
+			return fmt.Errorf("sub map %s key is not a string", childPath)
+		}
+		if err := d.checkValidators(child.(map[string]any), childPath); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (d RestTestResponseJSONBody) checkValueValidators(validators map[string]any, path string) error {
+	for k, v := range validators {
+		childPath := fmt.Sprintf("%s -> %s", path, k)
+		valType := reflect.TypeOf(v)
+		isArray := valType.Kind() == reflect.Array || valType.Kind() == reflect.Slice
+		if isArray {
+
+			childList, ok := v.([]any)
+			if !ok {
+				return fmt.Errorf("path %s: only slice and array are supported. But found %T", childPath, valType)
+			}
+
+			for i, child := range childList {
+				ccPath := fmt.Sprintf("%s[%d]", childPath, i)
+				ccType := reflect.TypeOf(child)
+				if ccType.Kind() == reflect.Map || ccType.Kind() == reflect.Slice || ccType.Kind() == reflect.Array {
+					return fmt.Errorf("path %s: only scalar values are supported. But found %T", ccPath, ccType)
+				}
+			}
+
+		} else if valType.Kind() == reflect.Map {
+			return fmt.Errorf("path %s: only slice, array and scaler values are supported. But found %T", childPath, valType)
+
+		}
+	}
+	return nil
 }

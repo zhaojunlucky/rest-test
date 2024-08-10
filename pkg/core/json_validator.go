@@ -12,6 +12,9 @@ type JSONValidator struct {
 }
 
 func (j *JSONValidator) Validate(obj any, validators map[string]any) error {
+	if len(validators) == 0 {
+		return nil
+	}
 	objType := reflect.TypeOf(obj)
 	switch objType.Kind() {
 	case reflect.Map:
