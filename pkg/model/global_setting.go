@@ -29,7 +29,7 @@ func (g *GlobalSetting) Parse(mapWrapper *collection.MapWrapper) error {
 	}
 
 	if globalWrapper.Has("headers") {
-		err = mapWrapper.Get("headers", &g.Headers)
+		err = globalWrapper.Get("headers", &g.Headers)
 		if err != nil {
 			return err
 		}

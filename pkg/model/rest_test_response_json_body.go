@@ -24,7 +24,7 @@ type RestTestResponseJSONBody struct {
 	Validators          map[string]any
 }
 
-func (d *RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
+func (d *RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *http.Response, js core.JSEnvExpander) (any, error) {
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -59,14 +59,14 @@ func (d *RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *htt
 		if d.Length != math.MinInt && d.Length != len(arr) {
 			return nil, fmt.Errorf("invalid JSON Array length: %d, expect %d", len(arr), d.Length)
 		}
-		return d.validate(arr)
+		return d.validate(arr, js)
 	} else {
 		var obj map[string]any
 		err = json.Unmarshal(data, &obj)
 		if err != nil {
 			return nil, err
 		}
-		return d.validate(obj)
+		return d.validate(obj, js)
 	}
 }
 
@@ -161,8 +161,8 @@ func (d *RestTestResponseJSONBody) checkValidators(validators map[string]any, pa
 	}
 }
 
-func (d *RestTestResponseJSONBody) validate(obj any) (any, error) {
-	jsonValidator := core.NewJSONValidator()
+func (d *RestTestResponseJSONBody) validate(obj any, js core.JSEnvExpander) (any, error) {
+	jsonValidator := core.NewJSONValidator(js)
 	if err := jsonValidator.Validate(obj, d.Validators); err != nil {
 		return nil, err
 	}

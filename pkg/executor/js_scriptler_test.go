@@ -1,7 +1,9 @@
 package executor
 
 import (
+	"fmt"
 	"github.com/zhaojunlucky/golib/pkg/env"
+	"reflect"
 	"testing"
 )
 
@@ -84,4 +86,15 @@ func TestJSScriptler_RunScriptWithBody(t *testing.T) {
 	if actual != "rest-tester----1----body" {
 		t.Fatalf("expect 'hello 1', but got %s", actual)
 	}
+}
+
+func TestAA(t *testing.T) {
+	var a any = "1"
+	var b any = float64(1)
+	ta := reflect.ValueOf(a)
+	tb := reflect.ValueOf(b)
+
+	fmt.Println(ta.CanConvert(tb.Type()))
+	fmt.Println(tb.CanConvert(ta.Type()))
+
 }

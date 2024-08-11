@@ -15,10 +15,16 @@ type TestSuiteExecutor struct {
 }
 
 func (t *TestSuiteExecutor) Execute(ctx *core.RestTestContext, environ env.Env, global *model.GlobalSetting, testSuiteExecResult *execution.TestSuiteExecutionResult) *report.TestSuiteReport {
+	defer func() {
+		testSuiteExecResult.Executed = true
+	}()
 
-	testSuiteExecResult.TestSuiteReport = &report.TestSuiteReport{
-		TestSuite: testSuiteExecResult.TestSuiteDef,
+	if testSuiteExecResult.TestSuiteReport == nil {
+		testSuiteExecResult.TestSuiteReport = &report.TestSuiteReport{
+			TestSuite: testSuiteExecResult.TestSuiteDef,
+		}
 	}
+
 	suiteReport := testSuiteExecResult.TestSuiteReport
 	testSuiteDef := testSuiteExecResult.TestSuiteDef
 

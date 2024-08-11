@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
 )
 
 type TestSuiteDef struct {
@@ -16,24 +16,24 @@ type TestSuiteDef struct {
 	Enabled     bool
 	Environment map[string]string
 	Global      GlobalSetting
-	Cases       []TestCaseDef
+	Cases       []*TestCaseDef
 	path        string
 }
 
-func (t *TestSuiteDef) Parse(file string) (err error) {
+func (t *TestSuiteDef) Parse(file string) error {
 	fi, err := os.Open(file)
 	if err != nil {
-		return
+		return err
 	}
-	t.path = path.Base(file)
+	t.path = filepath.Dir(file)
 	bytes, err := io.ReadAll(fi)
 	if err != nil {
-		return
+		return err
 	}
 	def := make(map[string]any)
 	err = yaml.Unmarshal(bytes, &def)
 	if err != nil {
-		return
+		return err
 	}
 
 	mapWrapper := collection.NewMapWrapper(def)
@@ -43,14 +43,16 @@ func (t *TestSuiteDef) Parse(file string) (err error) {
 		return err
 	}
 
-	depends, err := mapWrapper.GetAny("depends")
-	if err != nil {
-		log.Warningf("key depends not found in test plan %s", t.Name)
-	} else {
-		t.Depends, err = collection.GetObjAsSlice[string](depends)
+	if mapWrapper.Has("depends") {
+		depends, err := mapWrapper.GetAny("depends")
 		if err != nil {
-			err = fmt.Errorf("key depends in test plan %s is not a string or a string list. %w", t.Name, err)
-			return err
+			log.Warningf("key depends not found in test plan %s", t.Name)
+		} else {
+			t.Depends, err = collection.GetObjAsSlice[string](depends)
+			if err != nil {
+				err = fmt.Errorf("key depends in test plan %s is not a string or a string list. %w", t.Name, err)
+				return err
+			}
 		}
 	}
 
@@ -74,12 +76,15 @@ func (t *TestSuiteDef) Parse(file string) (err error) {
 
 	t.Global = GlobalSetting{}
 	err = t.Global.Parse(mapWrapper)
+	if err != nil {
+		return err
+	}
 
 	t.Cases, err = t.parseCases(mapWrapper)
-	return
+	return err
 }
 
-func (t *TestSuiteDef) parseCases(mapWrapper *collection.MapWrapper) ([]TestCaseDef, error) {
+func (t *TestSuiteDef) parseCases(mapWrapper *collection.MapWrapper) ([]*TestCaseDef, error) {
 	var caseList []any
 	err := mapWrapper.Get("cases", &caseList)
 	if err != nil {
@@ -89,7 +94,7 @@ func (t *TestSuiteDef) parseCases(mapWrapper *collection.MapWrapper) ([]TestCase
 		return nil, fmt.Errorf("test suite %s has no cases", t.Name)
 	}
 
-	var caseListDef []TestCaseDef
+	var caseListDef []*TestCaseDef
 
 	for i, caseName := range caseList {
 		caseObj, ok := caseName.(map[string]any)
@@ -97,7 +102,7 @@ func (t *TestSuiteDef) parseCases(mapWrapper *collection.MapWrapper) ([]TestCase
 		if !ok {
 			return nil, fmt.Errorf("the %d case in test suite %s is not a map", i, t.Name)
 		}
-		caseDef := TestCaseDef{}
+		caseDef := &TestCaseDef{}
 		err = caseDef.Parse(caseObj)
 		if err != nil {
 			return nil, err

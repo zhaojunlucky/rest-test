@@ -52,6 +52,6 @@ func (d *RestTestResponseBodyDef) Parse(bodyObj any) error {
 	return d.BodyValidator.Parse(mapWrapper)
 }
 
-func (d *RestTestResponseBodyDef) Validate(ctx *core.RestTestContext, resp *http.Response) (any, error) {
-	return d.BodyValidator.Validate(ctx, resp)
+func (d *RestTestResponseBodyDef) Validate(ctx *core.RestTestContext, resp *http.Response, js core.JSEnvExpander) (any, error) {
+	return d.BodyValidator.Validate(ctx, resp, js)
 }

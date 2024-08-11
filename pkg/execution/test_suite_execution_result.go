@@ -14,12 +14,12 @@ type TestSuiteExecutionResult struct {
 	TestPlanExecutionResult   *TestPlanExecutionResult
 }
 
-func (r TestSuiteExecutionResult) HasNamed(name string) bool {
+func (r *TestSuiteExecutionResult) HasNamed(name string) bool {
 	_, ok := r.NamedTestCasesExecResults[name]
 	return ok
 }
 
-func (r TestSuiteExecutionResult) AddTestCaseExecResults(result *TestCaseExecutionResult) {
+func (r *TestSuiteExecutionResult) AddTestCaseExecResults(result *TestCaseExecutionResult) {
 
 	r.TestCasesExecResults = append(r.TestCasesExecResults, result)
 	if result.TestCaseDef.Name != "" {

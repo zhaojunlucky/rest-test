@@ -80,9 +80,22 @@ func executeSuite(s string) {
 	}
 	testSuiteExecutor := executor.NewTestSuiteExecutor()
 
-	_, err = testSuiteExecutor.ExecuteSuite(env.NewOSEnv(), &testSuiteDef)
+	report, err := testSuiteExecutor.ExecuteSuite(env.NewOSEnv(), &testSuiteDef)
 	if err != nil {
 		log.Fatal(err)
+	}
+	fmt.Printf("suite report: %s\n", report.TestSuite.Name)
+	fmt.Printf("status: %s\n", report.Status)
+	if report.Error != nil {
+		fmt.Printf("error: %s\n", report.Error)
+	}
+
+	for i, caseReport := range report.GetChildren() {
+		fmt.Printf("  %d case report: %s\n", i+1, caseReport.TestCase.Name)
+		fmt.Printf("  status: %s\n", caseReport.Status)
+		if caseReport.Error != nil {
+			fmt.Printf("  error: %s\n", caseReport.Error)
+		}
 	}
 }
 

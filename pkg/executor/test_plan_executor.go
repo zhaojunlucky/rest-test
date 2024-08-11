@@ -51,7 +51,9 @@ func (t *TestPlanExecutor) ExecutePlan(environ env.Env, testPlanDef *model.TestP
 }
 
 func (t *TestPlanExecutor) Execute(ctx *core.RestTestContext, environ env.Env, global *model.GlobalSetting, testPlanExecCtx *execution.TestPlanExecutionResult) {
-
+	defer func() {
+		testPlanExecCtx.Executed = true
+	}()
 	testPlanDef := testPlanExecCtx.TestPlanDef
 	planReport := testPlanExecCtx.TestPlanReport
 	if testPlanDef.Enabled == false {

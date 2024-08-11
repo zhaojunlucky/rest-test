@@ -18,6 +18,8 @@ type TestCaseExecutor struct {
 
 func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, global *model.GlobalSetting, testCaseExecResult *execution.TestCaseExecutionResult,
 	testSuiteCase *TestSuiteCaseContext) *report.TestCaseReport {
+	testCaseExecResult.Executed = true
+
 	testCaseReport := &report.TestCaseReport{
 		TestCase: testCaseExecResult.TestCaseDef,
 	}
@@ -53,7 +55,7 @@ func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, globa
 		testCaseReport.Status = report.ExecutionError
 		return testCaseReport
 	}
-	body, err := testCaseExecResult.TestCaseDef.Response.Validate(ctx, resp)
+	body, err := testCaseExecResult.TestCaseDef.Response.Validate(ctx, resp, js)
 	if err != nil {
 		testCaseReport.Error = err
 		testCaseReport.Status = report.ExecutionError
@@ -72,13 +74,13 @@ func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, globa
 	return testCaseReport
 }
 
-func (t *TestCaseExecutor) Prepare(ctx *execution.TestSuiteExecutionResult, def model.TestCaseDef) error {
+func (t *TestCaseExecutor) Prepare(ctx *execution.TestSuiteExecutionResult, def *model.TestCaseDef) error {
 	if ctx.HasNamed(def.Name) {
 		return fmt.Errorf("duplicated named test case %s", def.Name)
 	}
 
 	testCaseExecResult := &execution.TestCaseExecutionResult{
-		TestCaseDef:              &def,
+		TestCaseDef:              def,
 		TestSuiteExecutionResult: ctx,
 	}
 	ctx.AddTestCaseExecResults(testCaseExecResult)

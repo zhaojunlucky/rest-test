@@ -42,14 +42,16 @@ func (t *TestPlanDef) Parse(file string) error {
 		return err
 	}
 
-	depends, err := mapWrapper.GetAny("depends")
-	if err != nil {
-		log.Warningf("key depends not found in test plan %s", t.Name)
-	} else {
-		t.depends, err = collection.GetObjAsSlice[string](depends)
+	if mapWrapper.Has("depends") {
+		depends, err := mapWrapper.GetAny("depends")
 		if err != nil {
-			err = fmt.Errorf("key depends in test plan %s is not a string or a string list. %w", t.Name, err)
-			return err
+			log.Warningf("key depends not found in test plan %s", t.Name)
+		} else {
+			t.depends, err = collection.GetObjAsSlice[string](depends)
+			if err != nil {
+				err = fmt.Errorf("key depends in test plan %s is not a string or a string list. %w", t.Name, err)
+				return err
+			}
 		}
 	}
 
@@ -73,10 +75,13 @@ func (t *TestPlanDef) Parse(file string) error {
 
 	t.Global = GlobalSetting{}
 	err = t.Global.Parse(mapWrapper)
+	if err != nil {
+		return err
+	}
 
 	t.Suites, err = t.parseSuites(mapWrapper)
 
-	return nil
+	return err
 }
 
 func (t *TestPlanDef) parseSuites(mapWrapper *collection.MapWrapper) ([]TestSuiteDef, error) {

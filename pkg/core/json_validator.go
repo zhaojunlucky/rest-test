@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/PaesslerAG/jsonpath"
@@ -9,6 +10,7 @@ import (
 )
 
 type JSONValidator struct {
+	js JSEnvExpander
 }
 
 func (j *JSONValidator) Validate(obj any, validators map[string]any) error {
@@ -34,25 +36,41 @@ func (j *JSONValidator) validate(obj any, validators map[string]any) error {
 
 	for k, v := range validators {
 		valType := reflect.TypeOf(v)
+		vv := v
+		if valType.Kind() == reflect.String {
+			vStr := strings.TrimSpace(v.(string))
+			if strings.HasPrefix(vStr, "$") {
+				vvStr, err := j.js.Expand(vStr)
+				if err != nil {
+					return err
+				}
+				vv, err = j.parseJSON(vvStr)
+				valType = reflect.TypeOf(vv)
+			}
+		}
+
 		isArray := valType.Kind() == reflect.Array || valType.Kind() == reflect.Slice
 		if strings.EqualFold(k, "and") || strings.EqualFold(k, "or") {
-			if isArray && valType.Elem().Kind() == reflect.Map {
-				listValidators, ok := v.([]map[string]any)
-				if !ok {
-					return fmt.Errorf("unsupported validator: %s need map[string]any", k)
-				}
+			if isArray {
+				listData := v.([]any)
 				opExecutor := JSONOperator{
-					expectCount: len(listValidators),
+					expectCount: len(listData),
 					OP:          k,
 				}
-				for i := 0; i < len(listValidators); i++ {
-					err := opExecutor.Add(j.validate(obj, listValidators[i]))
+				for _, child := range listData {
+					childValidator, ok := child.(map[string]any)
+					if !ok {
+						return fmt.Errorf("unsupported validator: %s need map[string]any", k)
+					}
+
+					err := opExecutor.Add(j.validate(obj, childValidator))
 					if err != nil {
 						return err
 					}
 					if opExecutor.Passed() {
 						return nil
 					}
+
 				}
 				return opExecutor.GetErrors()
 
@@ -64,7 +82,7 @@ func (j *JSONValidator) validate(obj any, validators map[string]any) error {
 			if err != nil {
 				return errors.Join(fmt.Errorf("failed to get json path: %s", k), err)
 			}
-			if !reflect.DeepEqual(jsonValue, v) {
+			if !j.compareNum(jsonValue, vv) && !reflect.DeepEqual(jsonValue, vv) {
 				return fmt.Errorf("failed to verify json path %s, got %v, want %v", k, jsonValue, valType)
 			} else {
 				return nil
@@ -74,8 +92,38 @@ func (j *JSONValidator) validate(obj any, validators map[string]any) error {
 	return nil
 }
 
-func NewJSONValidator() *JSONValidator {
-	return &JSONValidator{}
+func (j *JSONValidator) compareNum(jsonValue, expect any) bool {
+	jsonValueType := reflect.ValueOf(jsonValue)
+	expectValueType := reflect.ValueOf(expect)
+
+	if expectValueType.CanConvert(jsonValueType.Type()) {
+		val := jsonValueType.Convert(expectValueType.Type()).Interface() == expect
+		return val
+	} else if jsonValueType.CanConvert(expectValueType.Type()) {
+		val := expectValueType.Convert(jsonValueType.Type()).Interface() == jsonValue
+		return val
+	}
+	return false
+}
+
+func (j *JSONValidator) parseJSON(vv string) (any, error) {
+	type JSStruct struct {
+		Value any `json:"value"`
+	}
+	jsonStr := fmt.Sprintf(`{"value":%s}`, vv)
+	var js JSStruct
+	err := json.Unmarshal([]byte(jsonStr), &js)
+	if err != nil {
+		return nil, err
+	}
+	return js.Value, nil
+
+}
+
+func NewJSONValidator(js JSEnvExpander) *JSONValidator {
+	return &JSONValidator{
+		js: js,
+	}
 }
 
 type JSONOperator struct {
@@ -109,4 +157,8 @@ func (j *JSONOperator) Passed() bool {
 		return j.successCount == j.expectCount
 	}
 	return false
+}
+
+func NewJSONOperator() *JSONOperator {
+	return &JSONOperator{}
 }

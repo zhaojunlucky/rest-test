@@ -12,6 +12,7 @@ global: # dynamic
     Authorization: Bearer ${env.API_TOKEN}
     Content-Type: application/json
   dataDir: ./data
+  apiPrefix: ${env.API_PREFIX}
 cases:
   - desc: list github servers
     enabled: true # default is true
