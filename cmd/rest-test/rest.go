@@ -86,8 +86,10 @@ func executeSuite(s string) {
 	}
 	fmt.Printf("suite report: %s\n", report.TestSuite.Name)
 	fmt.Printf("status: %s\n", report.Status)
+	failed := false
 	if report.Error != nil {
 		fmt.Printf("error: %s\n", report.Error)
+		failed = true
 	}
 
 	for i, caseReport := range report.GetChildren() {
@@ -95,7 +97,11 @@ func executeSuite(s string) {
 		fmt.Printf("  status: %s\n", caseReport.Status)
 		if caseReport.Error != nil {
 			fmt.Printf("  error: %s\n", caseReport.Error)
+			failed = true
 		}
+	}
+	if failed {
+		os.Exit(1)
 	}
 }
 

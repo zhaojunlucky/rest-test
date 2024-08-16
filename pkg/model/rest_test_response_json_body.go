@@ -111,7 +111,7 @@ func (d *RestTestResponseJSONBody) Parse(mapWrapper *collection.MapWrapper) erro
 			return err
 		}
 	} else if valType.Type().Kind() == reflect.Slice {
-		var validators []string
+		var validators []map[string]any
 		err = mapWrapper.Get("validators", &validators)
 		if err != nil {
 			return err
@@ -150,9 +150,15 @@ func (d *RestTestResponseJSONBody) checkValidators(validators map[string]any, pa
 	if keys[0] == AND || keys[0] == OR {
 		value := validators[keys[0]]
 
-		listEle, ok := value.([]any)
-		if !ok {
+		var listEle []any
+		valType := reflect.ValueOf(value)
+
+		if valType.Type().Kind() != reflect.Slice && valType.Type().Kind() != reflect.Array {
 			return fmt.Errorf("path %s: only slice and array are supported", path)
+		}
+
+		for i := 0; i < valType.Len(); i++ {
+			listEle = append(listEle, valType.Index(i).Interface())
 		}
 
 		return d.checkOPValidators(listEle, path)

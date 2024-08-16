@@ -35,9 +35,9 @@ func (j *JSONValidator) Validate(obj any, validators map[string]any) error {
 func (j *JSONValidator) validate(obj any, validators map[string]any) error {
 
 	for k, v := range validators {
-		valType := reflect.TypeOf(v)
+		valType := reflect.ValueOf(v)
 		vv := v
-		if valType.Kind() == reflect.String {
+		if valType.Type().Kind() == reflect.String {
 			vStr := strings.TrimSpace(v.(string))
 			if strings.HasPrefix(vStr, "$") {
 				vvStr, err := j.js.Expand(vStr)
@@ -45,14 +45,14 @@ func (j *JSONValidator) validate(obj any, validators map[string]any) error {
 					return err
 				}
 				vv, err = j.parseJSON(vvStr)
-				valType = reflect.TypeOf(vv)
+				valType = reflect.ValueOf(vv)
 			}
 		}
 
-		isArray := valType.Kind() == reflect.Array || valType.Kind() == reflect.Slice
+		isArray := valType.Type().Kind() == reflect.Array || valType.Type().Kind() == reflect.Slice
 		if strings.EqualFold(k, "and") || strings.EqualFold(k, "or") {
 			if isArray {
-				listData := v.([]any)
+				listData := j.copyArray(valType)
 				opExecutor := JSONOperator{
 					expectCount: len(listData),
 					OP:          k,
@@ -118,6 +118,14 @@ func (j *JSONValidator) parseJSON(vv string) (any, error) {
 	}
 	return js.Value, nil
 
+}
+
+func (j *JSONValidator) copyArray(valType reflect.Value) []any {
+	var listData []any
+	for i := 0; i < valType.Len(); i++ {
+		listData = append(listData, valType.Index(i).Interface())
+	}
+	return listData
 }
 
 func NewJSONValidator(js JSEnvExpander) *JSONValidator {

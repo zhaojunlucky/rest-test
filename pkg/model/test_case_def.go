@@ -1,6 +1,10 @@
 package model
 
-import "github.com/zhaojunlucky/golib/pkg/collection"
+import (
+	"fmt"
+	log "github.com/sirupsen/logrus"
+	"github.com/zhaojunlucky/golib/pkg/collection"
+)
 
 type TestCaseDef struct {
 	Name        string
@@ -45,16 +49,26 @@ func (t *TestCaseDef) Parse(caseDef map[string]any) error {
 		}
 	}
 
-	t.Request = &RestTestRequestDef{}
+	if mapWrapper.Has("request") {
+		t.Request = &RestTestRequestDef{}
 
-	err = t.Request.Parse(mapWrapper)
-	if err != nil {
-		return err
+		err = t.Request.Parse(mapWrapper)
+		if err != nil {
+			return err
+		}
+
+	} else if mapWrapper.Has("requestRef") {
+		err = mapWrapper.Get("requestRef", &t.RequestRef)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Warnf("key request or requestRef not found in test case %s", t.Name)
+		return fmt.Errorf("key request or requestRef not found in test case %s", t.Name)
 	}
 
 	t.Response = &RestTestResponseDef{
 		RestTestRequest: t.Request,
 	}
-
 	return t.Response.Parse(mapWrapper)
 }
