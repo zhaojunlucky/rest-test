@@ -79,7 +79,9 @@ func (t *TestSuiteDef) Parse(file string) error {
 	if err != nil {
 		return err
 	}
-
+	if !filepath.IsAbs(t.Global.DataDir) {
+		t.Global.DataDir = filepath.Join(t.path, t.Global.DataDir)
+	}
 	t.Cases, err = t.parseCases(mapWrapper)
 	return err
 }

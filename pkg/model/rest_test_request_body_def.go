@@ -110,7 +110,7 @@ func (d *RestTestRequestBodyDef) GetBody(dataDir string, js core.JSEnvExpander) 
 	}
 
 	if len(d.Script) > 0 {
-		body, err = js.RunScript(d.Script)
+		body, err = js.RunScriptWithBody(d.Script, body)
 
 		if err != nil {
 			return nil, err

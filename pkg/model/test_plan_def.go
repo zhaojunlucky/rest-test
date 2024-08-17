@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 type TestPlanDef struct {
@@ -78,7 +79,9 @@ func (t *TestPlanDef) Parse(file string) error {
 	if err != nil {
 		return err
 	}
-
+	if !filepath.IsAbs(t.Global.DataDir) {
+		t.Global.DataDir = filepath.Join(t.path, t.Global.DataDir)
+	}
 	t.Suites, err = t.parseSuites(mapWrapper)
 
 	return err
