@@ -82,7 +82,7 @@ func (j *JSONValidator) validate(obj any, validators map[string]any) error {
 			if err != nil {
 				return errors.Join(fmt.Errorf("failed to get json path: %s", k), err)
 			}
-			if !j.compareNum(jsonValue, vv) && !reflect.DeepEqual(jsonValue, vv) {
+			if !reflect.DeepEqual(jsonValue, vv) && !j.compareNum(jsonValue, vv) {
 				return fmt.Errorf("failed to verify json path %s, got %v, want %v", k, jsonValue, valType)
 			} else {
 				return nil

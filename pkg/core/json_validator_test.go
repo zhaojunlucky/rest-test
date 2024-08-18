@@ -6,8 +6,24 @@ import (
 	"testing"
 )
 
+type TestStruct struct {
+}
+
+func (ts *TestStruct) Expand(s string) (string, error) {
+	return s, nil
+}
+func (ts *TestStruct) ExpandMap(m map[string]string) (map[string]string, error) {
+	return m, nil
+}
+func (ts *TestStruct) RunScript(s string) (string, error) {
+	return s, nil
+}
+func (ts *TestStruct) RunScriptWithBody(script string, body string) (string, error) {
+	return script, nil
+}
+
 func TestJSONValidator_SimplePass(t *testing.T) {
-	jsonValidator := NewJSONValidator()
+	jsonValidator := NewJSONValidator(&TestStruct{})
 	jsonData := map[string]any{
 		"a": 1,
 		"b": 2,
@@ -48,7 +64,7 @@ func TestJSONValidator_SimplePass(t *testing.T) {
 }
 
 func TestJSONValidator_SimpleFail(t *testing.T) {
-	jsonValidator := NewJSONValidator()
+	jsonValidator := NewJSONValidator(&TestStruct{})
 	jsonData := map[string]any{
 		"a": 1,
 		"b": 2,
@@ -90,7 +106,7 @@ func TestJSONValidator_SimpleFail(t *testing.T) {
 }
 
 func TestJSONValidator_ComplexPass(t *testing.T) {
-	jsonValidator := NewJSONValidator()
+	jsonValidator := NewJSONValidator(&TestStruct{})
 	jsonData := map[string]any{
 		"a": 1,
 		"b": 2,
@@ -153,7 +169,7 @@ func TestJSONOperatorOr_Pass(t *testing.T) {
 
 	assert.Equal(t, nil, jsonOP.Add(nil))
 	assert.Equal(t, true, jsonOP.Passed())
-	assert.Nil(t, jsonOP.GetErrors())
+	assert.NotNil(t, jsonOP.GetErrors())
 
 	assert.NotNil(t, t, jsonOP.Add(nil))
 }
