@@ -53,7 +53,7 @@ func (js *JSScriptler) Set(key string, val any) error {
 	return js.vm.GlobalObject().Set(key, val)
 }
 
-func (js *JSScriptler) RunScript(script string) (string, error) {
+func (js *JSScriptler) ExpandScript(script string) (string, error) {
 	o, err := js.vm.RunString(script)
 	if err != nil {
 		return "", err
@@ -65,7 +65,7 @@ func (js *JSScriptler) RunScript(script string) (string, error) {
 	return str, nil
 }
 
-func (js *JSScriptler) RunScriptWithBody(script string, body string) (string, error) {
+func (js *JSScriptler) ExpandScriptWithBody(script string, body string) (string, error) {
 	err := js.vm.Set("body", body)
 	if err != nil {
 		return "", err
@@ -79,6 +79,18 @@ func (js *JSScriptler) RunScriptWithBody(script string, body string) (string, er
 		return "", fmt.Errorf("expect string but got %T", o.Export())
 	}
 	return str, nil
+}
+
+func (js *JSScriptler) RunScriptWithBody(script string, body any) (goja.Value, error) {
+	err := js.vm.Set("body", body)
+	if err != nil {
+		return nil, err
+	}
+	o, err := js.vm.RunString(script)
+	if err != nil {
+		return nil, err
+	}
+	return o, nil
 }
 
 func NewJSScriptler(env env.Env, testSuiteCases *TestSuiteCaseContext) (*JSScriptler, error) {

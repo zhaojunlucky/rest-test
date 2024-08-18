@@ -15,10 +15,10 @@ func (ts *TestStruct) Expand(s string) (string, error) {
 func (ts *TestStruct) ExpandMap(m map[string]string) (map[string]string, error) {
 	return m, nil
 }
-func (ts *TestStruct) RunScript(s string) (string, error) {
+func (ts *TestStruct) ExpandScript(s string) (string, error) {
 	return s, nil
 }
-func (ts *TestStruct) RunScriptWithBody(script string, body string) (string, error) {
+func (ts *TestStruct) ExpandScriptWithBody(script string, body string) (string, error) {
 	return script, nil
 }
 

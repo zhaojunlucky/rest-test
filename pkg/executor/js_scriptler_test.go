@@ -56,7 +56,7 @@ func TestJSScriptler_RunScript(t *testing.T) {
 		var id = env.APP_ID
 		name + "----" + id
 `
-	actual, err := js.RunScript(script)
+	actual, err := js.ExpandScript(script)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestJSScriptler_RunScriptWithBody(t *testing.T) {
 		var id = env.APP_ID
 		name + "----" + id + "----" + body
 `
-	actual, err := js.RunScriptWithBody(script, "body")
+	actual, err := js.ExpandScriptWithBody(script, "body")
 	if err != nil {
 		t.Fatal(err)
 	}

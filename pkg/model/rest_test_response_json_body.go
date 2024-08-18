@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/golib/pkg/collection"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"golang.org/x/exp/maps"
@@ -22,6 +23,7 @@ type RestTestResponseJSONBody struct {
 	Length              int
 	ContainsRequestJSON bool
 	Validators          map[string]any
+	Script              string
 }
 
 func (d *RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *http.Response, js core.JSEnvExpander) (any, error) {
@@ -74,6 +76,13 @@ func (d *RestTestResponseJSONBody) Parse(mapWrapper *collection.MapWrapper) erro
 
 	if mapWrapper.Has("array") {
 		err := mapWrapper.Get("array", &d.Array)
+		if err != nil {
+			return err
+		}
+	}
+
+	if mapWrapper.Has("script") {
+		err := mapWrapper.Get("script", &d.Script)
 		if err != nil {
 			return err
 		}
@@ -168,6 +177,14 @@ func (d *RestTestResponseJSONBody) checkValidators(validators map[string]any, pa
 }
 
 func (d *RestTestResponseJSONBody) validate(obj any, js core.JSEnvExpander) (any, error) {
+	if len(d.Script) > 0 {
+		log.Info("validate body with script")
+		_, err := js.RunScriptWithBody(d.Script, obj)
+		if err != nil {
+			log.Errorf("script error: %s", err.Error())
+			return nil, err
+		}
+	}
 	jsonValidator := core.NewJSONValidator(js)
 	if err := jsonValidator.Validate(obj, d.Validators); err != nil {
 		return nil, err
