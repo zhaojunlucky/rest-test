@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/golib/pkg/collection"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"io"
@@ -34,6 +35,7 @@ func (d *RestTestRequestBodyDef) Parse(bodyObj any) error {
 
 		mapWrapper, err := collection.NewMapWrapperAny(bodyObj)
 		if err != nil {
+			log.Errorf("parse body error: %s", err.Error())
 			return err
 		}
 		return d.parse(mapWrapper)
@@ -49,6 +51,7 @@ func (d *RestTestRequestBodyDef) parse(mapWrapper *collection.MapWrapper) error 
 	if mapWrapper.Has("file") {
 		err := mapWrapper.Get("file", &d.File)
 		if err != nil {
+			log.Errorf("parse file error %s", err.Error())
 			return err
 		}
 	}
@@ -56,6 +59,7 @@ func (d *RestTestRequestBodyDef) parse(mapWrapper *collection.MapWrapper) error 
 	if mapWrapper.Has("uploadFile") {
 		err := mapWrapper.Get("uploadFile", &d.UploadFile)
 		if err != nil {
+			log.Errorf("parse uploadFile error %s", err.Error())
 			return err
 		}
 	}
@@ -63,21 +67,25 @@ func (d *RestTestRequestBodyDef) parse(mapWrapper *collection.MapWrapper) error 
 	if mapWrapper.Has("environment") {
 		err := mapWrapper.Get("environment", &d.Environment)
 		if err != nil {
+			log.Errorf("parse environment error %s", err.Error())
 			return err
 		}
 	}
 	if mapWrapper.Has("body") {
 		if len(d.File) > 0 {
+			log.Errorf("file and body cannot be set at the same time")
 			return fmt.Errorf("file and body cannot be set at the same time")
 		}
 		err := mapWrapper.Get("body", &d.Body)
 		if err != nil {
+			log.Errorf("parse body error %s", err.Error())
 			return err
 		}
 	}
 	if mapWrapper.Has("script") {
 		err := mapWrapper.Get("script", &d.Script)
 		if err != nil {
+			log.Errorf("parse script error %s", err.Error())
 			return err
 		}
 	}
@@ -96,6 +104,7 @@ func (d *RestTestRequestBodyDef) GetBody(dataDir string, js core.JSEnvExpander) 
 		filePath := path.Join(dataDir, d.File)
 		file, err = os.Open(filePath)
 		if err != nil {
+			log.Errorf("failed to open file %s: %s", filePath, err.Error())
 			return nil, err
 		}
 		if d.UploadFile {
@@ -103,6 +112,8 @@ func (d *RestTestRequestBodyDef) GetBody(dataDir string, js core.JSEnvExpander) 
 		} else {
 			data, err := io.ReadAll(file)
 			if err != nil {
+				log.Errorf("failed to open file %s: %s", filePath, err.Error())
+
 				return nil, err
 			}
 			body = string(data)
@@ -113,6 +124,7 @@ func (d *RestTestRequestBodyDef) GetBody(dataDir string, js core.JSEnvExpander) 
 		body, err = js.ExpandScriptWithBody(d.Script, body)
 
 		if err != nil {
+			log.Errorf("failed to expand script %s: %s", d.Script, err.Error())
 			return nil, err
 		}
 	}

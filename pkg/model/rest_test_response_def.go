@@ -19,6 +19,7 @@ type RestTestResponseDef struct {
 func (t *RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 	respWrapper, err := mapWrapper.GetChild("response")
 	if err != nil {
+		log.Errorf("parse response error: %s", err.Error())
 		return err
 	}
 
@@ -27,6 +28,7 @@ func (t *RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 		fieldCnt++
 		err = respWrapper.Get("code", &t.Code)
 		if err != nil {
+			log.Errorf("parse response code error: %s", err.Error())
 			return err
 		}
 	}
@@ -35,6 +37,7 @@ func (t *RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 		fieldCnt++
 		err = respWrapper.Get("contentType", &t.ContentType)
 		if err != nil {
+			log.Errorf("parse response contentType error: %s", err.Error())
 			return err
 		}
 	}
@@ -43,6 +46,7 @@ func (t *RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 		fieldCnt++
 		bodyObj, err := respWrapper.GetAny("body")
 		if err != nil {
+			log.Errorf("parse response body error: %s", err.Error())
 			return err
 		}
 
@@ -51,6 +55,7 @@ func (t *RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 		}
 		err = t.Body.Parse(bodyObj)
 		if err != nil {
+			log.Errorf("parse response body error: %s", err.Error())
 			return err
 		}
 	}
@@ -65,9 +70,11 @@ func (t *RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 
 func (t *RestTestResponseDef) Validate(ctx *core.RestTestContext, resp *http.Response, js core.JSEnvExpander) (any, error) {
 	if t.Code != 0 && resp.StatusCode != t.Code {
+		log.Errorf("invalid response code: %d, expect %d", resp.StatusCode, t.Code)
 		return nil, fmt.Errorf("invalid response code: %d, expect %d", resp.StatusCode, t.Code)
 	}
 	if len(t.ContentType) != 0 && !strings.HasPrefix(resp.Header.Get("Content-Type"), t.ContentType) {
+		log.Errorf("invalid response content type: %s, expect %s", resp.Header.Get("Content-Type"), t.ContentType)
 		return nil, fmt.Errorf("invalid response content type: %s, expect %s", resp.Header.Get("Content-Type"), t.ContentType)
 	}
 

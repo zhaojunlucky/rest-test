@@ -1,6 +1,7 @@
 package model
 
 import (
+	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/golib/pkg/collection"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
 )
@@ -16,6 +17,7 @@ func (g *GlobalSetting) Parse(mapWrapper *collection.MapWrapper) error {
 	var globalObj map[string]any
 	err := mapWrapper.Get("global", &globalObj)
 	if err != nil {
+		log.Errorf("parse global error: %s", err.Error())
 		return err
 	}
 
@@ -24,6 +26,7 @@ func (g *GlobalSetting) Parse(mapWrapper *collection.MapWrapper) error {
 	if globalWrapper.Has("dataDir") {
 		err = globalWrapper.Get("dataDir", &g.DataDir)
 		if err != nil {
+			log.Errorf("parse dataDir error: %s", err.Error())
 			return err
 		}
 	}
@@ -31,6 +34,7 @@ func (g *GlobalSetting) Parse(mapWrapper *collection.MapWrapper) error {
 	if globalWrapper.Has("headers") {
 		err = globalWrapper.Get("headers", &g.Headers)
 		if err != nil {
+			log.Errorf("parse headers error: %s", err.Error())
 			return err
 		}
 	}
@@ -38,6 +42,7 @@ func (g *GlobalSetting) Parse(mapWrapper *collection.MapWrapper) error {
 	if globalWrapper.Has("apiPrefix") {
 		err = globalWrapper.Get("apiPrefix", &g.APIPrefix)
 		if err != nil {
+			log.Errorf("parse apiPrefix error: %s", err.Error())
 			return err
 		}
 	}
@@ -64,16 +69,19 @@ func (g *GlobalSetting) Expand(js core.JSEnvExpander) (*GlobalSetting, error) {
 	var err error
 	global.DataDir, err = js.Expand(g.DataDir)
 	if err != nil {
+		log.Errorf("expand dataDir error: %s", err.Error())
 		return nil, err
 	}
 
 	global.Headers, err = js.ExpandMap(g.Headers)
 	if err != nil {
+		log.Errorf("expand headers error: %s", err.Error())
 		return nil, err
 	}
 
 	global.APIPrefix, err = js.Expand(g.APIPrefix)
 	if err != nil {
+		log.Errorf("expand apiPrefix error: %s", err.Error())
 		return nil, err
 	}
 	return global, nil

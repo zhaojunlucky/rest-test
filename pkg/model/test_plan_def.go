@@ -24,22 +24,26 @@ type TestPlanDef struct {
 func (t *TestPlanDef) Parse(file string) error {
 	fi, err := os.Open(file)
 	if err != nil {
+		log.Errorf("open file error: %s", err.Error())
 		return err
 	}
 	t.path = path.Base(file)
 	bytes, err := io.ReadAll(fi)
 	if err != nil {
+		log.Errorf("read file error: %s", err.Error())
 		return err
 	}
 	def := make(map[string]any)
 	err = yaml.Unmarshal(bytes, &def)
 	if err != nil {
+		log.Errorf("unmarshal file error: %s", err.Error())
 		return err
 	}
 
 	mapWrapper := collection.NewMapWrapper(def)
 	err = mapWrapper.Get("name", &t.Name)
 	if err != nil {
+		log.Errorf("key name not found in test plan %s", t.Name)
 		return err
 	}
 
@@ -51,6 +55,7 @@ func (t *TestPlanDef) Parse(file string) error {
 			t.depends, err = collection.GetObjAsSlice[string](depends)
 			if err != nil {
 				err = fmt.Errorf("key depends in test plan %s is not a string or a string list. %w", t.Name, err)
+				log.Error(err)
 				return err
 			}
 		}
@@ -61,6 +66,7 @@ func (t *TestPlanDef) Parse(file string) error {
 	} else {
 		err = mapWrapper.Get("enabled", &t.Enabled)
 		if err != nil {
+			log.Errorf("key enabled not found in test plan %s", t.Name)
 			return err
 		}
 	}
@@ -70,6 +76,7 @@ func (t *TestPlanDef) Parse(file string) error {
 	} else {
 		err = mapWrapper.Get("environment", &t.Environment)
 		if err != nil {
+			log.Errorf("key environment not found in test plan %s", t.Name)
 			return err
 		}
 	}
@@ -77,13 +84,15 @@ func (t *TestPlanDef) Parse(file string) error {
 	t.Global = GlobalSetting{}
 	err = t.Global.Parse(mapWrapper)
 	if err != nil {
+		log.Errorf("parse global error: %s", err.Error())
 		return err
 	}
 	if !filepath.IsAbs(t.Global.DataDir) {
 		t.Global.DataDir = filepath.Join(t.path, t.Global.DataDir)
 	}
-	t.Suites, err = t.parseSuites(mapWrapper)
+	log.Infof("test plan %s data dir is %s", t.Name, t.Global.DataDir)
 
+	t.Suites, err = t.parseSuites(mapWrapper)
 	return err
 }
 
@@ -91,10 +100,12 @@ func (t *TestPlanDef) parseSuites(mapWrapper *collection.MapWrapper) ([]TestSuit
 	var suiteNames []string
 	err := mapWrapper.Get("suites", &suiteNames)
 	if err != nil {
+		log.Errorf("key suites not found in test plan %s", t.Name)
 		return nil, err
 	}
 
 	if len(suiteNames) <= 0 {
+		log.Errorf("test plan %s has no suite", t.Name)
 		return nil, fmt.Errorf("test plan %s has no suite", t.Name)
 	}
 
@@ -103,10 +114,11 @@ func (t *TestPlanDef) parseSuites(mapWrapper *collection.MapWrapper) ([]TestSuit
 		baseDir = t.Global.DataDir
 	}
 	var suites []TestSuiteDef
-	for _, name := range suiteNames {
+	for i, name := range suiteNames {
 		suiteDef := TestSuiteDef{}
 		err = suiteDef.Parse(path.Join(baseDir, fmt.Sprintf("%s.yml", name)))
 		if err != nil {
+			log.Errorf("parse %d suite %s error: %s", i, name, err.Error())
 			return nil, err
 		}
 		suites = append(suites, suiteDef)

@@ -23,16 +23,19 @@ type TestSuiteDef struct {
 func (t *TestSuiteDef) Parse(file string) error {
 	fi, err := os.Open(file)
 	if err != nil {
+		log.Errorf("open file %s error: %s", file, err.Error())
 		return err
 	}
 	t.path = filepath.Dir(file)
 	bytes, err := io.ReadAll(fi)
 	if err != nil {
+		log.Errorf("read file %s error: %s", file, err.Error())
 		return err
 	}
 	def := make(map[string]any)
 	err = yaml.Unmarshal(bytes, &def)
 	if err != nil {
+		log.Errorf("unmarshal file %s error: %s", file, err.Error())
 		return err
 	}
 
@@ -40,6 +43,7 @@ func (t *TestSuiteDef) Parse(file string) error {
 
 	err = mapWrapper.Get("name", &t.Name)
 	if err != nil {
+		log.Errorf("key name not found in test suite %s", t.Name)
 		return err
 	}
 
@@ -51,6 +55,7 @@ func (t *TestSuiteDef) Parse(file string) error {
 			t.Depends, err = collection.GetObjAsSlice[string](depends)
 			if err != nil {
 				err = fmt.Errorf("key depends in test plan %s is not a string or a string list. %w", t.Name, err)
+				log.Errorf(err.Error())
 				return err
 			}
 		}
@@ -82,6 +87,7 @@ func (t *TestSuiteDef) Parse(file string) error {
 	if !filepath.IsAbs(t.Global.DataDir) {
 		t.Global.DataDir = filepath.Join(t.path, t.Global.DataDir)
 	}
+	log.Infof("test suite %s data dir: %s", t.Name, t.Global.DataDir)
 	t.Cases, err = t.parseCases(mapWrapper)
 	return err
 }
@@ -93,6 +99,7 @@ func (t *TestSuiteDef) parseCases(mapWrapper *collection.MapWrapper) ([]*TestCas
 		return nil, err
 	}
 	if len(caseList) <= 0 {
+		log.Errorf("test suite %s has no cases", t.Name)
 		return nil, fmt.Errorf("test suite %s has no cases", t.Name)
 	}
 
@@ -102,11 +109,13 @@ func (t *TestSuiteDef) parseCases(mapWrapper *collection.MapWrapper) ([]*TestCas
 		caseObj, ok := caseName.(map[string]any)
 
 		if !ok {
+			log.Errorf("the %d case in test suite %s is not a map", i, t.Name)
 			return nil, fmt.Errorf("the %d case in test suite %s is not a map", i, t.Name)
 		}
 		caseDef := &TestCaseDef{}
 		err = caseDef.Parse(caseObj)
 		if err != nil {
+			log.Errorf("parse %d case %s error: %s", i, caseName, err.Error())
 			return nil, err
 		}
 		caseListDef = append(caseListDef, caseDef)

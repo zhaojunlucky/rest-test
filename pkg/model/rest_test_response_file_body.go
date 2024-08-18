@@ -3,6 +3,7 @@ package model
 import (
 	"crypto/sha256"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/golib/pkg/collection"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"io"
@@ -20,14 +21,17 @@ type RestTestResponseFileBody struct {
 
 func (d *RestTestResponseFileBody) Validate(ctx *core.RestTestContext, resp *http.Response, js core.JSEnvExpander) (any, error) {
 	if d.Length != math.MinInt && d.Length != resp.ContentLength {
+		log.Errorf("invalid content length: %d, expect %d", resp.ContentLength, d.Length)
 		return "", fmt.Errorf("invalid content length: %d, expect %d", resp.ContentLength, d.Length)
 	}
 
 	if d.Min != math.MinInt && d.Min > resp.ContentLength {
+		log.Errorf("invalid content length: %d, expect >= %d", resp.ContentLength, d.Min)
 		return "", fmt.Errorf("invalid content length: %d, expect >= %d", resp.ContentLength, d.Min)
 	}
 
 	if d.Max != math.MinInt && d.Max < resp.ContentLength {
+		log.Errorf("invalid content length: %d, expect <= %d", resp.ContentLength, d.Max)
 		return "", fmt.Errorf("invalid content length: %d, expect <= %d", resp.ContentLength, d.Max)
 	}
 
@@ -39,6 +43,7 @@ func (d *RestTestResponseFileBody) Validate(ctx *core.RestTestContext, resp *htt
 		}
 
 		if realSha256 != d.Sha256 {
+			log.Errorf("invalid content sha256: %s, expect %s", realSha256, d.Sha256)
 			return "", fmt.Errorf("invalid content sha256: %s, expect %s", realSha256, d.Sha256)
 		}
 	}
@@ -49,6 +54,7 @@ func (d *RestTestResponseFileBody) Parse(mapWrapper *collection.MapWrapper) erro
 	if mapWrapper.Has("length") {
 		err := mapWrapper.Get("length", &d.Length)
 		if err != nil {
+			log.Errorf("parse length error: %s", err.Error())
 			return err
 		}
 
@@ -59,6 +65,7 @@ func (d *RestTestResponseFileBody) Parse(mapWrapper *collection.MapWrapper) erro
 	if mapWrapper.Has("sha256") {
 		err := mapWrapper.Get("sha256", &d.Sha256)
 		if err != nil {
+			log.Errorf("parse sha256 error: %s", err.Error())
 			return err
 		}
 	}
@@ -66,6 +73,7 @@ func (d *RestTestResponseFileBody) Parse(mapWrapper *collection.MapWrapper) erro
 	if mapWrapper.Has("min") {
 		err := mapWrapper.Get("min", &d.Min)
 		if err != nil {
+			log.Errorf("parse min error: %s", err.Error())
 			return err
 		}
 	} else {
@@ -75,6 +83,7 @@ func (d *RestTestResponseFileBody) Parse(mapWrapper *collection.MapWrapper) erro
 	if mapWrapper.Has("max") {
 		err := mapWrapper.Get("max", &d.Max)
 		if err != nil {
+			log.Errorf("parse max error: %s", err.Error())
 			return err
 		}
 	} else {

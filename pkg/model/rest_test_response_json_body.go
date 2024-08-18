@@ -32,6 +32,7 @@ func (d *RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *htt
 		return nil, err
 	}
 	bodyStr := string(data)
+	log.Infof("body: %s", bodyStr)
 	for _, r := range bodyStr {
 		if unicode.IsSpace(r) {
 			continue

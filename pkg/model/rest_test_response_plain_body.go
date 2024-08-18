@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/golib/pkg/collection"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"io"
@@ -24,12 +25,14 @@ func (d *RestTestResponsePlainBody) Validate(ctx *core.RestTestContext, resp *ht
 	bodyStr := string(data)
 
 	if d.Length != math.MinInt && d.Length != resp.ContentLength {
+		log.Errorf("invalid content length: %d, expect %d", resp.ContentLength, d.Length)
 		return bodyStr, fmt.Errorf("invalid content length: %d, expect %d", resp.ContentLength, d.Length)
 	}
 
 	if d.Regex != nil {
 
 		if !d.Regex.MatchString(bodyStr) {
+			log.Errorf("invalid content, expect match %s", d.Regex)
 			return bodyStr, fmt.Errorf("invalid content, expect match %s", d.Regex)
 		}
 	}
@@ -41,6 +44,7 @@ func (d *RestTestResponsePlainBody) Parse(mapWrapper *collection.MapWrapper) err
 	if mapWrapper.Has("length") {
 		err := mapWrapper.Get("length", &d.Length)
 		if err != nil {
+			log.Errorf("parse length error: %s", err.Error())
 			return err
 		}
 
@@ -52,10 +56,15 @@ func (d *RestTestResponsePlainBody) Parse(mapWrapper *collection.MapWrapper) err
 		var regStr string
 		err := mapWrapper.Get("regex", &regStr)
 		if err != nil {
+			log.Errorf("parse regex error: %s", err.Error())
 			return err
 		}
 
-		d.Regex = regexp.MustCompile(regStr)
+		d.Regex, err = regexp.Compile(regStr)
+		if err != nil {
+			log.Errorf("parse regex error: %s", err.Error())
+			return err
+		}
 	}
 	return nil
 }

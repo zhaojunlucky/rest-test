@@ -22,12 +22,14 @@ func (t *TestCaseDef) Parse(caseDef map[string]any) error {
 	if mapWrapper.Has("name") {
 		err := mapWrapper.Get("name", &t.Name)
 		if err != nil {
+			log.Errorf("key name parse error in test case %s: %s", t.Name, err.Error())
 			return err
 		}
 	}
 
 	err := mapWrapper.Get("desc", &t.Description)
 	if err != nil {
+		log.Errorf("key desc parsing error in test case %s: %s", t.Name, err.Error())
 		return err
 	}
 
@@ -36,6 +38,7 @@ func (t *TestCaseDef) Parse(caseDef map[string]any) error {
 	} else {
 		err = mapWrapper.Get("enabled", &t.Enabled)
 		if err != nil {
+			log.Errorf("key enabled parsing error in test case %s: %s", t.Name, err.Error())
 			return err
 		}
 	}
@@ -45,6 +48,7 @@ func (t *TestCaseDef) Parse(caseDef map[string]any) error {
 	} else {
 		err = mapWrapper.Get("environment", &t.Environment)
 		if err != nil {
+			log.Errorf("key environment parsing error in test case %s: %s", t.Name, err.Error())
 			return err
 		}
 	}
@@ -54,12 +58,14 @@ func (t *TestCaseDef) Parse(caseDef map[string]any) error {
 
 		err = t.Request.Parse(mapWrapper)
 		if err != nil {
+			log.Errorf("key request parsing error in test case %s: %s", t.Name, err.Error())
 			return err
 		}
 
 	} else if mapWrapper.Has("requestRef") {
 		err = mapWrapper.Get("requestRef", &t.RequestRef)
 		if err != nil {
+			log.Errorf("key requestRef parsing error in test case %s: %s", t.Name, err.Error())
 			return err
 		}
 	} else {

@@ -73,6 +73,7 @@ func main() {
 }
 
 func executeSuite(s string) {
+	log.Infof("execute suite: %s", s)
 	testSuiteDef := model.TestSuiteDef{}
 	err := testSuiteDef.Parse(s)
 	if err != nil {
@@ -93,7 +94,7 @@ func executeSuite(s string) {
 	}
 
 	for i, caseReport := range report.GetChildren() {
-		fmt.Printf("  %d case report: %s\n", i+1, caseReport.TestCase.Name)
+		fmt.Printf("  %d case report: %s - %s\n", i+1, caseReport.TestCase.Description, caseReport.TestCase.Name)
 		fmt.Printf("  status: %s\n", caseReport.Status)
 		if caseReport.Error != nil {
 			fmt.Printf("  error: %s\n", caseReport.Error)
@@ -106,6 +107,7 @@ func executeSuite(s string) {
 }
 
 func executePlan(s string) {
+	log.Infof("execute plan: %s", s)
 	testPlanDef := model.TestPlanDef{}
 	err := testPlanDef.Parse(s)
 	if err != nil {

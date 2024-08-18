@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/golib/pkg/collection"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"net/http"
@@ -21,18 +22,21 @@ type RestTestResponseBodyDef struct {
 func (d *RestTestResponseBodyDef) Parse(bodyObj any) error {
 	mapWrapper, err := collection.NewMapWrapperAny(bodyObj)
 	if err != nil {
+		log.Errorf("parse body error: %s", err.Error())
 		return err
 	}
 
 	if !mapWrapper.Has("type") {
+		log.Infof("body type not found, use default: %s", JSON)
 		d.Type = JSON
 	} else {
 		err = mapWrapper.Get("type", &d.Type)
 		if err != nil {
+			log.Errorf("parse body type error: %s", err.Error())
 			return err
 		}
 	}
-
+	log.Infof("body type: %s", d.Type)
 	if strings.EqualFold(JSON, d.Type) {
 		d.BodyValidator = &RestTestResponseJSONBody{
 			RestTestRequest: d.RestTestRequest,
