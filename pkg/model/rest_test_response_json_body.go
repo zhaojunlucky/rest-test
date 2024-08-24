@@ -6,23 +6,20 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/golib/pkg/collection"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
-	"golang.org/x/exp/maps"
+	"github.com/zhaojunlucky/rest-test/pkg/core/validator"
 	"io"
 	"math"
 	"net/http"
-	"reflect"
+	"strings"
 	"unicode"
 )
-
-const OR = "or"
-const AND = "and"
 
 type RestTestResponseJSONBody struct {
 	RestTestRequest     *RestTestRequestDef
 	Array               bool
 	Length              int
 	ContainsRequestJSON bool
-	Validators          map[string]any
+	JSONPathOPNode      *validator.JSONPathOperatorNode
 	Script              string
 }
 
@@ -51,10 +48,12 @@ func (d *RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *htt
 			return nil, fmt.Errorf("invalid json body, must start with [ or {, but got %s", string(r))
 		}
 	}
+	jsonDecoder := json.NewDecoder(strings.NewReader(bodyStr))
+	jsonDecoder.UseNumber()
 
 	if d.Array {
 		var arr []any
-		err = json.Unmarshal(data, &arr)
+		err = jsonDecoder.Decode(&arr)
 		if err != nil {
 			return nil, err
 		}
@@ -62,14 +61,14 @@ func (d *RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *htt
 		if d.Length != math.MinInt && d.Length != len(arr) {
 			return nil, fmt.Errorf("invalid JSON Array length: %d, expect %d", len(arr), d.Length)
 		}
-		return d.validate(arr, js)
+		return d.validate(core.ConvertArr(arr), js)
 	} else {
 		var obj map[string]any
-		err = json.Unmarshal(data, &obj)
+		err = jsonDecoder.Decode(&obj)
 		if err != nil {
 			return nil, err
 		}
-		return d.validate(obj, js)
+		return d.validate(core.ConvertObj(obj), js)
 	}
 }
 
@@ -110,71 +109,18 @@ func (d *RestTestResponseJSONBody) Parse(mapWrapper *collection.MapWrapper) erro
 		return nil
 	}
 
-	valType, err := mapWrapper.GetType("validators")
+	validators, err := mapWrapper.GetAny("validators")
 	if err != nil {
 		return err
 	}
 
-	if valType.Type().Kind() == reflect.Map {
-		err = mapWrapper.Get("validators", &d.Validators)
-		if err != nil {
-			return err
-		}
-	} else if valType.Type().Kind() == reflect.Slice {
-		var validators []map[string]any
-		err = mapWrapper.Get("validators", &validators)
-		if err != nil {
-			return err
-		}
+	d.JSONPathOPNode, err = validator.NewJSONPathRootValidator(validators)
 
-		d.Validators = map[string]any{
-			AND: validators,
-		}
+	if err != nil {
+		return err
 	}
 
-	return d.checkValidators(d.Validators, "")
-}
-
-func (d *RestTestResponseJSONBody) checkValidators(validators map[string]any, parent string) error {
-	if len(validators) == 0 {
-		return nil
-	}
-	keys := maps.Keys(validators)
-	var path string
-	if len(parent) > 0 {
-		path = fmt.Sprintf("%s -> %s", parent, keys[0])
-
-	} else {
-		path = keys[0]
-	}
-
-	if len(validators) > 1 {
-
-		for i := 0; i < len(keys); i++ {
-			if keys[i] == AND || keys[i] == OR {
-				return fmt.Errorf("path %s: can't mix operator %s or %s with value checker", path, AND, OR)
-			}
-		}
-	}
-
-	if keys[0] == AND || keys[0] == OR {
-		value := validators[keys[0]]
-
-		var listEle []any
-		valType := reflect.ValueOf(value)
-
-		if valType.Type().Kind() != reflect.Slice && valType.Type().Kind() != reflect.Array {
-			return fmt.Errorf("path %s: only slice and array are supported", path)
-		}
-
-		for i := 0; i < valType.Len(); i++ {
-			listEle = append(listEle, valType.Index(i).Interface())
-		}
-
-		return d.checkOPValidators(listEle, path)
-	} else {
-		return d.checkValueValidators(validators, parent)
-	}
+	return nil
 }
 
 func (d *RestTestResponseJSONBody) validate(obj any, js core.JSEnvExpander) (any, error) {
@@ -186,55 +132,13 @@ func (d *RestTestResponseJSONBody) validate(obj any, js core.JSEnvExpander) (any
 			return nil, err
 		}
 	}
-	jsonValidator := core.NewJSONValidator(js)
-	if err := jsonValidator.Validate(obj, d.Validators); err != nil {
-		return nil, err
+	if d.JSONPathOPNode != nil {
+		log.Info("validate body with jsonpath")
+		err := d.JSONPathOPNode.Validate(js, obj)
+		if err != nil {
+			log.Errorf("jsonpath validate error: %s", err.Error())
+			return nil, err
+		}
 	}
 	return obj, nil
-}
-
-func (d *RestTestResponseJSONBody) checkOPValidators(listEle []any, path string) error {
-
-	for i, child := range listEle {
-		childPath := fmt.Sprintf("%s[%d]", path, i)
-		cType := reflect.TypeOf(child)
-		if cType.Kind() != reflect.Map {
-			return fmt.Errorf("%s is not a map", childPath)
-		}
-		if cType.Key().Kind() != reflect.String {
-			return fmt.Errorf("sub map %s key is not a string", childPath)
-		}
-		if err := d.checkValidators(child.(map[string]any), childPath); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (d *RestTestResponseJSONBody) checkValueValidators(validators map[string]any, path string) error {
-	for k, v := range validators {
-		childPath := fmt.Sprintf("%s -> %s", path, k)
-		valType := reflect.TypeOf(v)
-		isArray := valType.Kind() == reflect.Array || valType.Kind() == reflect.Slice
-		if isArray {
-
-			childList, ok := v.([]any)
-			if !ok {
-				return fmt.Errorf("path %s: only slice and array are supported. But found %T", childPath, valType)
-			}
-
-			for i, child := range childList {
-				ccPath := fmt.Sprintf("%s[%d]", childPath, i)
-				ccType := reflect.TypeOf(child)
-				if ccType.Kind() == reflect.Map || ccType.Kind() == reflect.Slice || ccType.Kind() == reflect.Array {
-					return fmt.Errorf("path %s: only scalar values are supported. But found %T", ccPath, ccType)
-				}
-			}
-
-		} else if valType.Kind() == reflect.Map {
-			return fmt.Errorf("path %s: only slice, array and scaler values are supported. But found %T", childPath, valType)
-
-		}
-	}
-	return nil
 }
