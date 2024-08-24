@@ -28,6 +28,7 @@ func TestJSONPathLanguage_Compile(t *testing.T) {
 		t.Fatal(err)
 	}
 	valType := reflect.ValueOf(get)
-	fmt.Println(valType.Type())
-
+	fmt.Println("@@@@")
+	fmt.Println(valType.Type().String())
+	fmt.Println("-------")
 }
