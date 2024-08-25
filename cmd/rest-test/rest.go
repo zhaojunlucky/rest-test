@@ -118,28 +118,14 @@ func executeSuite(ctx *core.RestTestContext, s string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("suite report: %s\n", report.TestSuite.Name)
-	fmt.Printf("status: %s\n", report.Status)
-	failed := false
-	if report.Error != nil {
-		fmt.Printf("error: %s\n", report.Error)
-		failed = true
-	}
 
-	for i, caseReport := range report.GetChildren() {
-		fmt.Printf("  %d case report: %s - %s\n", i+1, caseReport.TestCase.Description, caseReport.TestCase.Name)
-		fmt.Printf("  status: %s\n", caseReport.Status)
-		if caseReport.Error != nil {
-			fmt.Printf("  error: %s\n", caseReport.Error)
-			failed = true
-		}
-	}
 	err = report.WriteReport(filepath.Join(ctx.LogPath, "report.yml"))
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
 	}
-	if failed {
-		os.Exit(1)
+	err = report.GetError()
+	if err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -155,34 +141,14 @@ func executePlan(ctx *core.RestTestContext, s string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("plan report: %s\n", testPlanDef.Name)
-	fmt.Printf("plan status: %s\n", report.Status)
-	failed := false
 
-	for i, suiteReport := range report.GetChildren() {
-		fmt.Printf("\t%d. suite report: %s\n", i+1, suiteReport.TestSuite.Name)
-		fmt.Printf("\tstatus: %s\n", suiteReport.Status)
-		if report.Error != nil {
-			fmt.Printf("\terror: %s\n", suiteReport.Error)
-			failed = true
-		}
-
-		for j, caseReport := range suiteReport.GetChildren() {
-			fmt.Printf("\t\t%d case report: %s - %s\n", j+1, caseReport.TestCase.Description, caseReport.TestCase.Name)
-			fmt.Printf("\t\tstatus: %s\n", caseReport.Status)
-			if caseReport.Error != nil {
-				fmt.Printf("\t\terror: %s\n", caseReport.Error)
-				failed = true
-			}
-		}
-	}
 	err = report.WriteReport(filepath.Join(ctx.LogPath, "report.yml"))
+	if err != nil {
+		log.Error(err)
+	}
+
+	err = report.GetError()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	if failed {
-		os.Exit(1)
-	}
-
 }

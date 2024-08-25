@@ -14,7 +14,7 @@ type TestReport[T any] interface {
 	GetTotalTime() float64
 
 	GetTestDef() *T
-	GetError() []error
+	GetError() error
 	GetStatus() string
 	GetReportData() map[string]any
 }

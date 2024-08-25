@@ -19,9 +19,9 @@ type TestCaseExecutor struct {
 func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, global *model.GlobalSetting, testCaseExecResult *execution.TestCaseExecutionResult,
 	testSuiteCase *TestSuiteCaseContext) *report.TestCaseReport {
 	defer func() {
-		log.Infof("[Case] end execute test case: %s", testCaseExecResult.TestCaseDef.Name)
+		log.Infof("[Case] end execute test case: %s-%s", testCaseExecResult.TestCaseDef.Description, testCaseExecResult.TestCaseDef.Name)
 	}()
-	log.Infof("[Case] start execute test case: %s", testCaseExecResult.TestCaseDef.Name)
+	log.Infof("[Case] start execute test case: %s-%s", testCaseExecResult.TestCaseDef.Description, testCaseExecResult.TestCaseDef.Name)
 	testCaseExecResult.Executed = true
 
 	testCaseReport := &report.TestCaseReport{
@@ -85,9 +85,9 @@ func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, globa
 
 func (t *TestCaseExecutor) Prepare(ctx *execution.TestSuiteExecutionResult, def *model.TestCaseDef) error {
 	defer func() {
-		log.Infof("[Case] end prepare test case: %s", def.Name)
+		log.Infof("[Case] end prepare test case: %s-%s", def.Description, def.Name)
 	}()
-	log.Infof("[Case] prepare test case: %s", def.Name)
+	log.Infof("[Case] prepare test case: %s-%s", def.Description, def.Name)
 	if ctx.HasNamed(def.Name) {
 		return fmt.Errorf("duplicated named test case %s", def.Name)
 	}

@@ -1,6 +1,7 @@
 package report
 
 import (
+	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/rest-test/pkg/model"
@@ -38,7 +39,17 @@ func (t *TestSuiteReport) AddTestCaseReport(testCaseReport *TestCaseReport) {
 }
 
 func (t *TestSuiteReport) GetError() error {
-	return t.Error
+	var caseErrs []error
+	if t.Error != nil {
+		caseErrs = append(caseErrs, t.Error)
+	}
+
+	for _, testCaseReport := range t.testCaseReports {
+		if err := testCaseReport.GetError(); err != nil {
+			caseErrs = append(caseErrs, err)
+		}
+	}
+	return errors.Join(caseErrs...)
 }
 
 func (t *TestSuiteReport) GetStatus() string {
@@ -100,5 +111,6 @@ func (t *TestSuiteReport) WriteReport(file string) error {
 		}
 	}(fi)
 	_, err = fi.Write(out)
+	fmt.Println(string(out))
 	return err
 }
