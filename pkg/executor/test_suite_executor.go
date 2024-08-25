@@ -2,6 +2,7 @@ package executor
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/golib/pkg/env"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"github.com/zhaojunlucky/rest-test/pkg/execution"
@@ -17,8 +18,9 @@ type TestSuiteExecutor struct {
 func (t *TestSuiteExecutor) Execute(ctx *core.RestTestContext, environ env.Env, global *model.GlobalSetting, testSuiteExecResult *execution.TestSuiteExecutionResult) *report.TestSuiteReport {
 	defer func() {
 		testSuiteExecResult.Executed = true
+		log.Infof("[Suite] end test suite: %s", testSuiteExecResult.TestSuiteDef.Name)
 	}()
-
+	log.Infof("[Suite] execute test suite: %s", testSuiteExecResult.TestSuiteDef.Name)
 	if testSuiteExecResult.TestSuiteReport == nil {
 		testSuiteExecResult.TestSuiteReport = &report.TestSuiteReport{
 			TestSuite: testSuiteExecResult.TestSuiteDef,
@@ -76,6 +78,10 @@ func (t *TestSuiteExecutor) Execute(ctx *core.RestTestContext, environ env.Env, 
 }
 
 func (t *TestSuiteExecutor) Prepare(ctx *execution.TestPlanExecutionResult, def model.TestSuiteDef) error {
+	defer func() {
+		log.Infof("[Suite] end prepare test suite: %s", def.Name)
+	}()
+	log.Infof("[Suite] prepare test suite: %s", def.Name)
 	if ctx.HasNamed(def.Name) {
 		return fmt.Errorf("duplicated named test suite %s", def.Name)
 	}
@@ -98,7 +104,10 @@ func (t *TestSuiteExecutor) Prepare(ctx *execution.TestPlanExecutionResult, def 
 }
 
 func (t *TestSuiteExecutor) Validate(result *execution.TestSuiteExecutionResult) error {
-
+	defer func() {
+		log.Infof("[Suite] end validate test suite: %s", result.TestSuiteDef.Name)
+	}()
+	log.Infof("[Suite] validate test suite: %s", result.TestSuiteDef.Name)
 	for _, testCaseResult := range result.TestCasesExecResults {
 
 		if len(testCaseResult.TestCaseDef.RequestRef) > 0 {
@@ -106,7 +115,11 @@ func (t *TestSuiteExecutor) Validate(result *execution.TestSuiteExecutionResult)
 				return fmt.Errorf("depends %s test case %s not found", testCaseResult.TestCaseDef.RequestRef,
 					testCaseResult.TestCaseDef.Name)
 			} else {
-				testCaseResult.TestCaseDef.Request = result.NamedTestCasesExecResults[testCaseResult.TestCaseDef.RequestRef].TestCaseDef.Request
+				err := testCaseResult.TestCaseDef.CloneRequestRef(result.NamedTestCasesExecResults[testCaseResult.TestCaseDef.RequestRef].TestCaseDef.Request)
+				if err != nil {
+					log.Infof("failed to clone requestRef %s, error %v", testCaseResult.TestCaseDef.RequestRef, err)
+					return err
+				}
 			}
 		}
 
@@ -118,8 +131,12 @@ func (t *TestSuiteExecutor) Validate(result *execution.TestSuiteExecutionResult)
 	return nil
 }
 
-func (t *TestSuiteExecutor) ExecuteSuite(osEnv env.Env, testSuiteDef *model.TestSuiteDef) (*report.TestSuiteReport, error) {
+func (t *TestSuiteExecutor) ExecuteSuite(ctx *core.RestTestContext, osEnv env.Env, testSuiteDef *model.TestSuiteDef) (*report.TestSuiteReport, error) {
+	defer func() {
+		log.Infof("[Suite] end test suite: %s", testSuiteDef.Name)
+	}()
 
+	log.Infof("[Suite] start test suite: %s", testSuiteDef.Name)
 	testSuiteExecCtx, err := t.prepare(testSuiteDef)
 	if testSuiteExecCtx == nil {
 		return nil, fmt.Errorf("failed to prepare test plan: %v", err)
@@ -135,15 +152,14 @@ func (t *TestSuiteExecutor) ExecuteSuite(osEnv env.Env, testSuiteDef *model.Test
 		suiteReport.Status = report.ConfigError
 		return suiteReport, err
 	}
-
+	log.Infof("validate test suite: %s", testSuiteDef.Name)
 	if err = t.Validate(testSuiteExecCtx); err != nil {
 		suiteReport.Error = err
 		suiteReport.Status = report.ConfigError
 		return suiteReport, err
 	}
-	ctx := &core.RestTestContext{}
 	planEnv := env.NewReadWriteEnv(osEnv, testSuiteDef.Environment)
-
+	log.Infof("execute test suite: %s", testSuiteDef.Name)
 	t.Execute(ctx, planEnv, &testSuiteDef.Global, testSuiteExecCtx)
 
 	start := time.Now()
@@ -151,10 +167,15 @@ func (t *TestSuiteExecutor) ExecuteSuite(osEnv env.Env, testSuiteDef *model.Test
 	suiteReport.ExecutionTime = time.Since(start).Seconds()
 	suiteReport.TotalTime = time.Since(start).Seconds()
 	suiteReport.Status = report.Completed
+	log.Infof("[Suite] end test suite: %s", testSuiteDef.Name)
 	return suiteReport, nil
 }
 
 func (t *TestSuiteExecutor) prepare(def *model.TestSuiteDef) (*execution.TestSuiteExecutionResult, error) {
+	defer func() {
+		log.Infof("[Suite] end prepare test suite: %s", def.Name)
+	}()
+	log.Infof("[Suite] prepare test suite: %s", def.Name)
 	testSuiteExecResult := &execution.TestSuiteExecutionResult{
 		TestSuiteDef:              def,
 		NamedTestCasesExecResults: make(map[string]*execution.TestCaseExecutionResult),

@@ -11,6 +11,8 @@ type RestTestRequestDef struct {
 	Body       *RestTestRequestBodyDef
 	Headers    map[string]string
 	Parameters map[string]string
+	CaseDef    *TestCaseDef
+	Cloned     bool
 }
 
 func (t *RestTestRequestDef) Parse(mapWrapper *collection.MapWrapper) error {
@@ -60,4 +62,16 @@ func (t *RestTestRequestDef) Parse(mapWrapper *collection.MapWrapper) error {
 
 	}
 	return nil
+}
+
+func (t *RestTestRequestDef) Clone(caseDef *TestCaseDef) *RestTestRequestDef {
+	return &RestTestRequestDef{
+		URL:        t.URL,
+		Method:     t.Method,
+		Body:       t.Body,
+		Headers:    t.Headers,
+		Parameters: t.Parameters,
+		CaseDef:    caseDef,
+		Cloned:     true,
+	}
 }

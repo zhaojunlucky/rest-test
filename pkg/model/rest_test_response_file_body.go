@@ -19,6 +19,11 @@ type RestTestResponseFileBody struct {
 	Sha256          string
 }
 
+func (d *RestTestResponseFileBody) UpdateRequest(req *RestTestRequestDef) error {
+	d.RestTestRequest = req
+	return nil
+}
+
 func (d *RestTestResponseFileBody) Validate(ctx *core.RestTestContext, resp *http.Response, js core.JSEnvExpander) (any, error) {
 	if d.Length != math.MinInt && d.Length != resp.ContentLength {
 		log.Errorf("invalid content length: %d, expect %d", resp.ContentLength, d.Length)

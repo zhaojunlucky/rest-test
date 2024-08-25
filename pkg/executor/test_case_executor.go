@@ -18,6 +18,10 @@ type TestCaseExecutor struct {
 
 func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, global *model.GlobalSetting, testCaseExecResult *execution.TestCaseExecutionResult,
 	testSuiteCase *TestSuiteCaseContext) *report.TestCaseReport {
+	defer func() {
+		log.Infof("[Case] end execute test case: %s", testCaseExecResult.TestCaseDef.Name)
+	}()
+	log.Infof("[Case] start execute test case: %s", testCaseExecResult.TestCaseDef.Name)
 	testCaseExecResult.Executed = true
 
 	testCaseReport := &report.TestCaseReport{
@@ -36,6 +40,7 @@ func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, globa
 
 	js, err := NewJSScriptler(env, testSuiteCase)
 	if err != nil {
+		log.Errorf("failed to create js scriptler: %v", err)
 		testCaseReport.Status = report.InitError
 		testCaseReport.Error = err
 		return testCaseReport
@@ -44,6 +49,7 @@ func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, globa
 	start := time.Now()
 	global, err = global.Expand(js)
 	if err != nil {
+		log.Errorf("failed to expand global: %v", err)
 		testCaseReport.Error = err
 		testCaseReport.Status = report.InitError
 		return testCaseReport
@@ -51,12 +57,14 @@ func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, globa
 
 	resp, err := t.performHTTPRequest(ctx, global, testCaseDef, js)
 	if err != nil {
+		log.Errorf("failed to perform http request: %v", err)
 		testCaseReport.Error = err
 		testCaseReport.Status = report.ExecutionError
 		return testCaseReport
 	}
 	body, err := testCaseExecResult.TestCaseDef.Response.Validate(ctx, resp, js)
 	if err != nil {
+		log.Errorf("failed to validate response: %v", err)
 		testCaseReport.Error = err
 		testCaseReport.Status = report.ExecutionError
 		return testCaseReport
@@ -69,12 +77,17 @@ func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, globa
 
 	err = testSuiteCase.Add(testCaseExecResult, body)
 	if err != nil {
+		log.Errorf("failed to add test case result: %v", err)
 		log.Error(err)
 	}
 	return testCaseReport
 }
 
 func (t *TestCaseExecutor) Prepare(ctx *execution.TestSuiteExecutionResult, def *model.TestCaseDef) error {
+	defer func() {
+		log.Infof("[Case] end prepare test case: %s", def.Name)
+	}()
+	log.Infof("[Case] prepare test case: %s", def.Name)
 	if ctx.HasNamed(def.Name) {
 		return fmt.Errorf("duplicated named test case %s", def.Name)
 	}
@@ -95,6 +108,7 @@ func (t *TestCaseExecutor) Validate(result *execution.TestCaseExecutionResult) e
 func (t *TestCaseExecutor) performHTTPRequest(ctx *core.RestTestContext, global *model.GlobalSetting, def *model.TestCaseDef, js *JSScriptler) (*http.Response, error) {
 	url, err := js.Expand(def.Request.URL)
 	if err != nil {
+		log.Infof("failed to expand url: %v", err)
 		return nil, err
 	}
 
@@ -107,11 +121,13 @@ func (t *TestCaseExecutor) performHTTPRequest(ctx *core.RestTestContext, global 
 
 	bodyReader, err := def.Request.Body.GetBody(global.DataDir, js)
 	if err != nil {
+		log.Errorf("failed to get body: %v", err)
 		return nil, err
 	}
 	var req *http.Request
 	req, err = http.NewRequest(def.Request.Method, url, bodyReader)
 	if err != nil {
+		log.Errorf("failed to create request: %v", err)
 		return nil, err
 	}
 

@@ -32,7 +32,7 @@ func (js *JSScriptler) Expand(val string) (string, error) {
 	o, err := js.vm.RunString(fmt.Sprintf("`%s`", val))
 	if err != nil {
 		log.Errorf("expand %s error: %s", val, err.Error())
-		return "", err
+		return "", fmt.Errorf("expand %s error: %s", val, err.Error())
 	}
 	str, ok := o.Export().(string)
 	if !ok {
@@ -49,7 +49,7 @@ func (js *JSScriptler) ExpandMap(val map[string]string) (map[string]string, erro
 		expandMap[k], err = js.Expand(v)
 		if err != nil {
 			log.Errorf("expand %s error: %s", v, err.Error())
-			return nil, err
+			return nil, fmt.Errorf("expand %s error: %s", v, err.Error())
 		}
 	}
 	return expandMap, nil
@@ -63,7 +63,7 @@ func (js *JSScriptler) ExpandScript(script string) (string, error) {
 	o, err := js.vm.RunString(script)
 	if err != nil {
 		log.Errorf("expand %s error: %s", script, err.Error())
-		return "", err
+		return "", fmt.Errorf("expand %s error: %s", script, err.Error())
 	}
 	str, ok := o.Export().(string)
 	if !ok {
@@ -77,12 +77,12 @@ func (js *JSScriptler) ExpandScriptWithBody(script string, body string) (string,
 	err := js.vm.Set("body", body)
 	if err != nil {
 		log.Errorf("set body error: %s", err.Error())
-		return "", err
+		return "", fmt.Errorf("set body error: %s", err.Error())
 	}
 	o, err := js.vm.RunString(script)
 	if err != nil {
 		log.Errorf("expand %s error: %s", script, err.Error())
-		return "", err
+		return "", fmt.Errorf("expand %s error: %s", script, err.Error())
 	}
 	str, ok := o.Export().(string)
 	if !ok {
@@ -96,12 +96,12 @@ func (js *JSScriptler) RunScriptWithBody(script string, body any) (goja.Value, e
 	err := js.vm.Set("body", body)
 	if err != nil {
 		log.Errorf("set body error: %s", err.Error())
-		return nil, err
+		return nil, fmt.Errorf("set body error: %s", err.Error())
 	}
 	o, err := js.vm.RunString(script)
 	if err != nil {
 		log.Errorf("expand %s error: %s", script, err.Error())
-		return nil, err
+		return nil, fmt.Errorf("expand %s error: %s", script, err.Error())
 	}
 	return o, nil
 }

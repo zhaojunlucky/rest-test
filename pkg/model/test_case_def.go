@@ -6,7 +6,16 @@ import (
 	"github.com/zhaojunlucky/golib/pkg/collection"
 )
 
+var counter int = 0
+
+func incrementCounter() int {
+	counter++
+	return counter
+}
+
 type TestCaseDef struct {
+	ID          int
+	SuiteDef    *TestSuiteDef
 	Name        string
 	Description string
 	Enabled     bool
@@ -16,7 +25,29 @@ type TestCaseDef struct {
 	Response    *RestTestResponseDef
 }
 
+func (t *TestCaseDef) GetID() string {
+	caseId := t.ID
+	suiteId := t.SuiteDef.ID
+
+	if t.SuiteDef.PlanDef != nil {
+		return fmt.Sprintf("%d_%d_%d", suiteId, caseId, t.SuiteDef.PlanDef.ID)
+	} else {
+		return fmt.Sprintf("0_%d_%d", suiteId, caseId)
+	}
+}
+
+func (t *TestCaseDef) CloneRequestRef(src *RestTestRequestDef) error {
+	log.Infof("clone request ref for test case %s from test case %s", t.Description, src.CaseDef.Description)
+	if t.Request != nil || len(t.RequestRef) <= 0 {
+		return fmt.Errorf("cannot clone request ref for test case %s", t.Name)
+	}
+	t.Request = src.Clone(t)
+	return t.Response.UpdateRequest(t.Request)
+}
+
 func (t *TestCaseDef) Parse(caseDef map[string]any) error {
+	t.ID = incrementCounter()
+
 	mapWrapper := collection.NewMapWrapper(caseDef)
 
 	if mapWrapper.Has("name") {
@@ -54,8 +85,9 @@ func (t *TestCaseDef) Parse(caseDef map[string]any) error {
 	}
 
 	if mapWrapper.Has("request") {
-		t.Request = &RestTestRequestDef{}
-
+		t.Request = &RestTestRequestDef{
+			CaseDef: t,
+		}
 		err = t.Request.Parse(mapWrapper)
 		if err != nil {
 			log.Errorf("key request parsing error in test case %s: %s", t.Name, err.Error())

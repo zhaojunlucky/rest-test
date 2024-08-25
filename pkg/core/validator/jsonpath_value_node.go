@@ -3,6 +3,7 @@ package validator
 import (
 	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"reflect"
 	"strings"
@@ -11,14 +12,16 @@ import (
 type JSONPathValueNode struct {
 	data map[string]reflect.Value
 	lang *JSONPathLanguage
+	path string
 }
 
 func (j *JSONPathValueNode) init(data map[string]any, path string) error {
+	j.path = path
 	if j.data == nil {
 		j.data = make(map[string]reflect.Value)
 	}
 	for k, v := range data {
-		childPath := fmt.Sprintf("%s.%s", path, k)
+		childPath := fmt.Sprintf("%s.(%s)", path, k)
 		if IsLogicOperator(k) {
 			return fmt.Errorf("path %s shouldn't be a logic operator", childPath)
 		}
@@ -52,19 +55,22 @@ func (j *JSONPathValueNode) init(data map[string]any, path string) error {
 
 func (j *JSONPathValueNode) Validate(js core.JSEnvExpander, v any) error {
 	for expr, expect := range j.data {
+		childPath := fmt.Sprintf("%s.(%s)", j.path, expr)
 		actualVal, err := j.lang.Evaluate(expr, v)
 		if err != nil {
+			log.Errorf("evaluate error %s at path %s", err.Error(), childPath)
 			return err
 		}
 		expect, err = j.handleString(expect, js)
 		if err != nil {
+			log.Errorf("interpret error %s at path %s", err.Error(), childPath)
 			return err
 		}
-		// actual := j.handleJSONNumber(actualVal)
 		actual := reflect.ValueOf(actualVal)
 
 		err = j.compare(actual, expect)
 		if err != nil {
+			log.Errorf("compile error %s at path %s", err.Error(), childPath)
 			return err
 		}
 
@@ -121,12 +127,12 @@ func (j *JSONPathValueNode) compare(actual reflect.Value, expect reflect.Value) 
 
 	if expect.CanInt() && actual.CanInt() {
 		if expect.Int() != actual.Int() {
-			return fmt.Errorf("expect %d, but got %d", expect.Int(), actual.Int())
+			return fmt.Errorf("expect int %d, but got %d", expect.Int(), actual.Int())
 		}
 		return nil
 	} else if expect.CanFloat() && actual.CanFloat() {
 		if expect.Float() != actual.Float() {
-			return fmt.Errorf("expect %f, but got %f", expect.Float(), actual.Float())
+			return fmt.Errorf("expect float %f, but got %f", expect.Float(), actual.Float())
 		}
 		return nil
 	}
@@ -155,17 +161,3 @@ func (j *JSONPathValueNode) compare(actual reflect.Value, expect reflect.Value) 
 	}
 	return nil
 }
-
-//func (j *JSONPathValueNode) handleJSONNumber(val any) reflect.Value {
-//	valType := reflect.ValueOf(val)
-//	if valType.Type().String() == "json.Number" {
-//		if n, err := val.(json.Number).Int64(); err == nil {
-//			return reflect.ValueOf(n)
-//		} else if f, err := val.(json.Number).Float64(); err == nil {
-//			return reflect.ValueOf(f)
-//		} else {
-//			return valType
-//		}
-//	}
-//	return valType
-//}

@@ -10,7 +10,16 @@ import (
 	"path/filepath"
 )
 
+var suiteCounter = 0
+
+func increaseSuiteCounter() int {
+	suiteCounter++
+	return suiteCounter
+}
+
 type TestSuiteDef struct {
+	ID          int
+	PlanDef     *TestPlanDef
 	Name        string
 	Depends     []string
 	Enabled     bool
@@ -21,6 +30,7 @@ type TestSuiteDef struct {
 }
 
 func (t *TestSuiteDef) Parse(file string) error {
+	t.ID = increaseSuiteCounter()
 	fi, err := os.Open(file)
 	if err != nil {
 		log.Errorf("open file %s error: %s", file, err.Error())
@@ -112,7 +122,9 @@ func (t *TestSuiteDef) parseCases(mapWrapper *collection.MapWrapper) ([]*TestCas
 			log.Errorf("the %d case in test suite %s is not a map", i, t.Name)
 			return nil, fmt.Errorf("the %d case in test suite %s is not a map", i, t.Name)
 		}
-		caseDef := &TestCaseDef{}
+		caseDef := &TestCaseDef{
+			SuiteDef: t,
+		}
 		err = caseDef.Parse(caseObj)
 		if err != nil {
 			log.Errorf("parse %d case %s error: %s", i, caseName, err.Error())

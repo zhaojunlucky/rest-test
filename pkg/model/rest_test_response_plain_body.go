@@ -17,6 +17,11 @@ type RestTestResponsePlainBody struct {
 	Regex           *regexp.Regexp
 }
 
+func (d *RestTestResponsePlainBody) UpdateRequest(req *RestTestRequestDef) error {
+	d.RestTestRequest = req
+	return nil
+}
+
 func (d *RestTestResponsePlainBody) Validate(ctx *core.RestTestContext, resp *http.Response, js core.JSEnvExpander) (any, error) {
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {

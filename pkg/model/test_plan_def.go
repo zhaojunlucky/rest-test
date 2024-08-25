@@ -11,7 +11,15 @@ import (
 	"path/filepath"
 )
 
+var planCounter = 0
+
+func increasePlanCounter() int {
+	planCounter++
+	return planCounter
+}
+
 type TestPlanDef struct {
+	ID          int
 	Name        string
 	depends     []string // not supported now
 	Enabled     bool
@@ -22,6 +30,7 @@ type TestPlanDef struct {
 }
 
 func (t *TestPlanDef) Parse(file string) error {
+	t.ID = increasePlanCounter()
 	fi, err := os.Open(file)
 	if err != nil {
 		log.Errorf("open file error: %s", err.Error())
@@ -115,7 +124,9 @@ func (t *TestPlanDef) parseSuites(mapWrapper *collection.MapWrapper) ([]TestSuit
 	}
 	var suites []TestSuiteDef
 	for i, name := range suiteNames {
-		suiteDef := TestSuiteDef{}
+		suiteDef := TestSuiteDef{
+			PlanDef: t,
+		}
 		err = suiteDef.Parse(path.Join(baseDir, fmt.Sprintf("%s.yml", name)))
 		if err != nil {
 			log.Errorf("parse %d suite %s error: %s", i, name, err.Error())

@@ -16,6 +16,11 @@ type RestTestResponseDef struct {
 	Body            *RestTestResponseBodyDef
 }
 
+func (t *RestTestResponseDef) UpdateRequest(req *RestTestRequestDef) error {
+	t.RestTestRequest = req
+	return t.Body.UpdateRequest(req)
+}
+
 func (t *RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 	respWrapper, err := mapWrapper.GetChild("response")
 	if err != nil {

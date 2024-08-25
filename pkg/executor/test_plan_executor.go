@@ -2,6 +2,7 @@ package executor
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/golib/pkg/env"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"github.com/zhaojunlucky/rest-test/pkg/execution"
@@ -14,7 +15,12 @@ type TestPlanExecutor struct {
 	testSuiteExecutor *TestSuiteExecutor
 }
 
-func (t *TestPlanExecutor) ExecutePlan(environ env.Env, testPlanDef *model.TestPlanDef) (*report.TestPlanReport, error) {
+func (t *TestPlanExecutor) ExecutePlan(ctx *core.RestTestContext, environ env.Env, testPlanDef *model.TestPlanDef) (*report.TestPlanReport, error) {
+	log.Infof("[Plan] start test plan: %s", testPlanDef.Name)
+
+	defer func() {
+		log.Infof("[Plan] end test plan: %s", testPlanDef.Name)
+	}()
 
 	testPlanExecCtx, err := t.Prepare(testPlanDef)
 	if testPlanExecCtx == nil {
@@ -27,17 +33,18 @@ func (t *TestPlanExecutor) ExecutePlan(environ env.Env, testPlanDef *model.TestP
 
 	planReport := testPlanExecCtx.TestPlanReport
 	if err != nil {
+		log.Errorf("failed to prepare test plan: %v", err)
 		planReport.Error = err
 		planReport.Status = report.ConfigError
 		return planReport, err
 	}
 
 	if err = t.Validate(testPlanExecCtx); err != nil {
+		log.Errorf("failed to validate test plan: %v", err)
 		planReport.Error = err
 		planReport.Status = report.ConfigError
 		return planReport, err
 	}
-	ctx := &core.RestTestContext{}
 	planEnv := env.NewReadWriteEnv(environ, testPlanDef.Environment)
 
 	t.Execute(ctx, planEnv, &testPlanDef.Global, testPlanExecCtx)
@@ -47,13 +54,17 @@ func (t *TestPlanExecutor) ExecutePlan(environ env.Env, testPlanDef *model.TestP
 	planReport.ExecutionTime = time.Since(start).Seconds()
 	planReport.TotalTime = time.Since(start).Seconds()
 	planReport.Status = report.Completed
+
 	return planReport, nil
 }
 
 func (t *TestPlanExecutor) Execute(ctx *core.RestTestContext, environ env.Env, global *model.GlobalSetting, testPlanExecCtx *execution.TestPlanExecutionResult) {
 	defer func() {
 		testPlanExecCtx.Executed = true
+		log.Infof("[Plan] end test plan: %s", testPlanExecCtx.TestPlanDef.Name)
 	}()
+
+	log.Infof("[Plan] execute test plan: %s", testPlanExecCtx.TestPlanDef.Name)
 	testPlanDef := testPlanExecCtx.TestPlanDef
 	planReport := testPlanExecCtx.TestPlanReport
 	if testPlanDef.Enabled == false {
@@ -78,7 +89,11 @@ func (t *TestPlanExecutor) Execute(ctx *core.RestTestContext, environ env.Env, g
 }
 
 func (t *TestPlanExecutor) Prepare(def *model.TestPlanDef) (testPlanExecCtx *execution.TestPlanExecutionResult, err error) {
+	defer func() {
+		log.Infof("[Plan] end prepare test plan: %s", def.Name)
+	}()
 
+	log.Infof("[Plan] prepare test plan: %s", def.Name)
 	testPlanExecCtx = &execution.TestPlanExecutionResult{
 		TestPlanDef:               def,
 		NamedTestSuiteExecResults: make(map[string]*execution.TestSuiteExecutionResult),
@@ -86,6 +101,7 @@ func (t *TestPlanExecutor) Prepare(def *model.TestPlanDef) (testPlanExecCtx *exe
 	for _, testSuiteDef := range def.Suites {
 		err = t.testSuiteExecutor.Prepare(testPlanExecCtx, testSuiteDef)
 		if err != nil {
+			log.Errorf("failed to prepare test suite %s: %v", testSuiteDef.Name, err)
 			return
 		}
 	}
@@ -93,6 +109,10 @@ func (t *TestPlanExecutor) Prepare(def *model.TestPlanDef) (testPlanExecCtx *exe
 }
 
 func (t *TestPlanExecutor) Validate(ctx *execution.TestPlanExecutionResult) error {
+	defer func() {
+		log.Infof("[Plan] end validate test plan: %s", ctx.TestPlanDef.Name)
+	}()
+	log.Infof("[Plan] validate test plan: %s", ctx.TestPlanDef.Name)
 	for _, testSuiteExecResult := range ctx.TestSuiteExecResults {
 		for _, dep := range testSuiteExecResult.TestSuiteDef.Depends {
 			if !ctx.HasNamed(dep) {
@@ -102,6 +122,7 @@ func (t *TestPlanExecutor) Validate(ctx *execution.TestPlanExecutionResult) erro
 		}
 
 		if err := t.testSuiteExecutor.Validate(testSuiteExecResult); err != nil {
+			log.Errorf("failed to validate test suite %s: %v", testSuiteExecResult.TestSuiteDef.Name, err)
 			return err
 		}
 	}

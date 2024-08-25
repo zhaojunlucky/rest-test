@@ -10,6 +10,8 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"unicode"
 )
@@ -23,13 +25,21 @@ type RestTestResponseJSONBody struct {
 	Script              string
 }
 
+func (d *RestTestResponseJSONBody) UpdateRequest(req *RestTestRequestDef) error {
+	d.RestTestRequest = req
+	return nil
+}
+
 func (d *RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *http.Response, js core.JSEnvExpander) (any, error) {
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 	bodyStr := string(data)
-	log.Infof("body: %s", bodyStr)
+
+	if err = d.writeBody(ctx, resp, bodyStr); err != nil {
+		log.Warnf("write test case response body error: %s", err.Error())
+	}
 	for _, r := range bodyStr {
 		if unicode.IsSpace(r) {
 			continue
@@ -141,4 +151,48 @@ func (d *RestTestResponseJSONBody) validate(obj any, js core.JSEnvExpander) (any
 		}
 	}
 	return obj, nil
+}
+
+func (d *RestTestResponseJSONBody) writeBody(ctx *core.RestTestContext, resp *http.Response, str string) error {
+	bodyFile := d.RestTestRequest.CaseDef.Description
+	if len(d.RestTestRequest.CaseDef.Name) > 0 {
+		bodyFile = fmt.Sprintf("%s_%s", d.RestTestRequest.CaseDef.Description, d.RestTestRequest.CaseDef.Name)
+	}
+
+	bodyFile = fmt.Sprintf("%s_%s.txt", d.RestTestRequest.CaseDef.GetID(), bodyFile)
+	bodyFile = filepath.Join(ctx.LogPath, bodyFile)
+	bodyFile = filepath.Clean(bodyFile)
+	log.Infof("write test case response body to file: %s", bodyFile)
+
+	fi, err := os.Create(bodyFile)
+	if err != nil {
+		log.Errorf("create file %s error: %s", bodyFile, err.Error())
+		return err
+	}
+	defer func(fi *os.File) {
+		err := fi.Close()
+		if err != nil {
+			log.Errorf("close file %s error: %s", bodyFile, err.Error())
+		}
+	}(fi)
+
+	_, err = io.WriteString(fi, "Headers:\n")
+	if err != nil {
+		return err
+	}
+
+	for k, v := range resp.Header {
+		_, err = io.WriteString(fi, fmt.Sprintf("%s: %s\n", k, strings.Join(v, ",")))
+		if err != nil {
+			return err
+		}
+	}
+	_, err = io.WriteString(fi, "\nBody:\n")
+
+	_, err = io.WriteString(fi, str)
+	if err != nil {
+		log.Errorf("write file %s error: %s", bodyFile, err.Error())
+		return err
+	}
+	return nil
 }

@@ -30,7 +30,7 @@ func (l *JSONPathLanguage) Compile(expr string) error {
 func (l *JSONPathLanguage) Evaluate(expr string, v any) (any, error) {
 	eval, ok := l.expression[expr]
 	if !ok {
-		return nil, fmt.Errorf("unexpected expression: %s", expr)
+		return nil, fmt.Errorf("uncompiled expression: %s", expr)
 	}
 	return eval(context.Background(), v)
 }

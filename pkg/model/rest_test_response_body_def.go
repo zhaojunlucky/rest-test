@@ -19,6 +19,12 @@ type RestTestResponseBodyDef struct {
 	BodyValidator   RestTestResponseBodyValidator
 }
 
+func (d *RestTestResponseBodyDef) UpdateRequest(req *RestTestRequestDef) error {
+	log.Infof("update request for body")
+	d.RestTestRequest = req
+	return d.BodyValidator.UpdateRequest(req)
+}
+
 func (d *RestTestResponseBodyDef) Parse(bodyObj any) error {
 	mapWrapper, err := collection.NewMapWrapperAny(bodyObj)
 	if err != nil {
@@ -27,7 +33,7 @@ func (d *RestTestResponseBodyDef) Parse(bodyObj any) error {
 	}
 
 	if !mapWrapper.Has("type") {
-		log.Infof("body type not found, use default: %s", JSON)
+		log.Debugf("body type not found, use default: %s", JSON)
 		d.Type = JSON
 	} else {
 		err = mapWrapper.Get("type", &d.Type)
@@ -36,7 +42,7 @@ func (d *RestTestResponseBodyDef) Parse(bodyObj any) error {
 			return err
 		}
 	}
-	log.Infof("body type: %s", d.Type)
+	log.Debugf("body type: %s", d.Type)
 	if strings.EqualFold(JSON, d.Type) {
 		d.BodyValidator = &RestTestResponseJSONBody{
 			RestTestRequest: d.RestTestRequest,

@@ -2,6 +2,7 @@ package validator
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/rest-test/pkg/core"
 	"golang.org/x/exp/maps"
 	"reflect"
@@ -11,6 +12,7 @@ type JSONPathOperatorNode struct {
 	children []JSONPathNode
 	operator string
 	lang     *JSONPathLanguage
+	path     string
 }
 
 func (j *JSONPathOperatorNode) init(data map[string]any, path string) error {
@@ -27,8 +29,10 @@ func (j *JSONPathOperatorNode) init(data map[string]any, path string) error {
 
 	var childPath string
 	if path == "" {
+		j.path = "root"
 		childPath = j.operator
 	} else {
+		j.path = path
 		childPath = fmt.Sprintf("%s.%s", path, j.operator)
 	}
 
@@ -39,7 +43,7 @@ func (j *JSONPathOperatorNode) initChildren(data any, path string) error {
 
 	cType := reflect.ValueOf(data)
 	if cType.Type().Kind() != reflect.Slice && cType.Type().Kind() != reflect.Array {
-		return fmt.Errorf("%s is not array or slice", path)
+		return fmt.Errorf("operator node at path %s is not array or slice", path)
 	}
 
 	for i := 0; i < cType.Len(); i++ {
@@ -58,6 +62,7 @@ func (j *JSONPathOperatorNode) initChildren(data any, path string) error {
 				lang: j.lang,
 			}
 			if err := cNode.init(cData, childPath); err != nil {
+				log.Errorf("init operator node error %s at path %s", err.Error(), childPath)
 				return err
 			}
 			j.children = append(j.children, cNode)
@@ -66,6 +71,7 @@ func (j *JSONPathOperatorNode) initChildren(data any, path string) error {
 				lang: j.lang,
 			}
 			if err := cNode.init(cData, childPath); err != nil {
+				log.Errorf("init value node error %s at path %s", err.Error(), childPath)
 				return err
 			}
 			j.children = append(j.children, cNode)
@@ -79,8 +85,9 @@ func (j *JSONPathOperatorNode) Validate(js core.JSEnvExpander, v any) error {
 		expectCount: len(j.children),
 		OP:          j.operator,
 	}
-	for _, child := range j.children {
+	for i, child := range j.children {
 		if err := jsonOP.Add(child.Validate(js, v)); err != nil {
+			log.Errorf("verify error %s at path %s", err.Error(), fmt.Sprintf("%s[%d]", j.path, i))
 			return err
 		}
 		if jsonOP.Passed() {
@@ -90,7 +97,11 @@ func (j *JSONPathOperatorNode) Validate(js core.JSEnvExpander, v any) error {
 	if jsonOP.Passed() {
 		return nil
 	}
-	return jsonOP.GetErrors()
+	err := jsonOP.GetErrors()
+	if err != nil {
+		log.Errorf("verify error %s at path %s", err.Error(), j.path)
+	}
+	return err
 }
 
 func NewJSONPathRootValidator(def any) (*JSONPathOperatorNode, error) {
