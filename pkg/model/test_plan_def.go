@@ -36,7 +36,7 @@ func (t *TestPlanDef) Parse(file string) error {
 		log.Errorf("open file error: %s", err.Error())
 		return err
 	}
-	t.path = path.Base(file)
+	t.path = filepath.Dir(file)
 	bytes, err := io.ReadAll(fi)
 	if err != nil {
 		log.Errorf("read file error: %s", err.Error())

@@ -43,8 +43,7 @@ cases:
         array: false
         validators:
           and:
-            - $.id:
-                ge: 1
+            - $.id: 1
   - desc: get github server
     request:
       url: github/${ctx.create.resp.id}
@@ -65,8 +64,7 @@ cases:
       contentType: application/json
       body:
         validators:
-          - $.errorMessages:
-              ct: "name has already been taken"
+          - contain("name has already been taken",$.errorMessages): true
   - desc: create second github server
     name: create2
     request:
@@ -97,7 +95,7 @@ cases:
         validators:
           and:
             - $.entryCount: 2
-            - $.entries.length: 2
+            - len($.entries): 2
             - $.entries[0].id: ${ctx.create.resp.id}
             - $.entries[1].id: ${ctx.create2.resp.id}
             - or:
@@ -119,7 +117,7 @@ cases:
         validators:
           and:
             - $.entryCount: 1
-            - $.entries.length: 1
+            - len($.entries): 1
             - $.entries[0].id: ${ctx.create.resp.id}
         script: if (body.entries[0].name != 'xxx') {
           throw new Error("invalid name")

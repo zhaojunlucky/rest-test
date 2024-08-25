@@ -146,8 +146,34 @@ func executePlan(ctx *core.RestTestContext, s string) {
 		log.Fatal(err)
 	}
 	testPlanExecutor := executor.NewTestPlanExecutor()
-	_, err = testPlanExecutor.ExecutePlan(ctx, env.NewOSEnv(), &testPlanDef)
+	report, err := testPlanExecutor.ExecutePlan(ctx, env.NewOSEnv(), &testPlanDef)
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("plan report: %s\n", testPlanDef.Name)
+	fmt.Printf("plan status: %s\n", report.Status)
+	failed := false
+
+	for i, suiteReport := range report.GetChildren() {
+		fmt.Printf("\t%d. suite report: %s\n", i+1, suiteReport.TestSuite.Name)
+		fmt.Printf("\tstatus: %s\n", suiteReport.Status)
+		if report.Error != nil {
+			fmt.Printf("\terror: %s\n", suiteReport.Error)
+			failed = true
+		}
+
+		for j, caseReport := range suiteReport.GetChildren() {
+			fmt.Printf("\t\t%d case report: %s - %s\n", j+1, caseReport.TestCase.Description, caseReport.TestCase.Name)
+			fmt.Printf("\t\tstatus: %s\n", caseReport.Status)
+			if caseReport.Error != nil {
+				fmt.Printf("\t\terror: %s\n", caseReport.Error)
+				failed = true
+			}
+		}
+	}
+
+	if failed {
+		os.Exit(1)
+	}
+
 }

@@ -176,7 +176,9 @@ func (d *RestTestResponseJSONBody) writeBody(ctx *core.RestTestContext, resp *ht
 		}
 	}(fi)
 
-	_, err = io.WriteString(fi, "Headers:\n")
+	_, err = io.WriteString(fi, fmt.Sprintf("Status: %d\n", resp.StatusCode))
+
+	_, err = io.WriteString(fi, "\nHeaders:\n")
 	if err != nil {
 		return err
 	}

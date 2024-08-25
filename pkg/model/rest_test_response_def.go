@@ -18,6 +18,9 @@ type RestTestResponseDef struct {
 
 func (t *RestTestResponseDef) UpdateRequest(req *RestTestRequestDef) error {
 	t.RestTestRequest = req
+	if t.Body == nil {
+		return nil
+	}
 	return t.Body.UpdateRequest(req)
 }
 
