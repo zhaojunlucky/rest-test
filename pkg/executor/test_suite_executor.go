@@ -74,6 +74,7 @@ func (t *TestSuiteExecutor) Execute(ctx *core.RestTestContext, environ env.Env, 
 		suiteReport.AddTestCaseReport(testCaseReport)
 	}
 	suiteReport.TotalTime = time.Since(start).Seconds()
+	suiteReport.Status = report.Completed
 	return suiteReport
 }
 
@@ -166,7 +167,6 @@ func (t *TestSuiteExecutor) ExecuteSuite(ctx *core.RestTestContext, osEnv env.En
 
 	suiteReport.ExecutionTime = time.Since(start).Seconds()
 	suiteReport.TotalTime = time.Since(start).Seconds()
-	suiteReport.Status = report.Completed
 	log.Infof("[Suite] end test suite: %s", testSuiteDef.Name)
 	return suiteReport, nil
 }

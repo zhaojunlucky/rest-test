@@ -1,6 +1,12 @@
 package report
 
-import "github.com/zhaojunlucky/rest-test/pkg/model"
+import (
+	"fmt"
+	log "github.com/sirupsen/logrus"
+	"github.com/zhaojunlucky/rest-test/pkg/model"
+	"gopkg.in/yaml.v3"
+	"os"
+)
 
 type TestSuiteReport struct {
 	ExecutionTime   float64
@@ -46,4 +52,53 @@ func (t *TestSuiteReport) HasPassed() bool {
 		}
 	}
 	return true
+}
+
+func (t *TestSuiteReport) GetReportData() (map[string]any, error) {
+	if t.Status == "" {
+		return nil, fmt.Errorf("test suite %s name is not executed", t.TestSuite.Name)
+	}
+	var caseDataList []map[string]any
+
+	for _, testCaseReport := range t.testCaseReports {
+		caseData, err := testCaseReport.GetReportData()
+		if err != nil {
+			return nil, err
+		}
+		caseDataList = append(caseDataList, caseData)
+	}
+	return map[string]any{
+		"type":          "suite",
+		"name":          t.TestSuite.Name,
+		"executionTime": t.ExecutionTime,
+		"totalTime":     t.TotalTime,
+		"error":         getErrorStr(t.Error),
+		"status":        t.Status,
+		"cases":         caseDataList,
+	}, nil
+}
+
+func (t *TestSuiteReport) WriteReport(file string) error {
+	log.Infof("write test suite report to file: %s", file)
+
+	data, err := t.GetReportData()
+	if err != nil {
+		return err
+	}
+	out, err := yaml.Marshal(&data)
+	if err != nil {
+		return err
+	}
+	fi, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+	defer func(fi *os.File) {
+		err := fi.Close()
+		if err != nil {
+			log.Errorf("close file %s error: %s", file, err.Error())
+		}
+	}(fi)
+	_, err = fi.Write(out)
+	return err
 }

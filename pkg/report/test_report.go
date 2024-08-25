@@ -16,4 +16,16 @@ type TestReport[T any] interface {
 	GetTestDef() *T
 	GetError() []error
 	GetStatus() string
+	GetReportData() map[string]any
+}
+
+type TestReportWriter interface {
+	WriteReport(file string) error
+}
+
+func getErrorStr(err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	return ""
 }

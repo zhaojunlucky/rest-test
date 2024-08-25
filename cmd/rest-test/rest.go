@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"time"
@@ -133,6 +134,10 @@ func executeSuite(ctx *core.RestTestContext, s string) {
 			failed = true
 		}
 	}
+	err = report.WriteReport(filepath.Join(ctx.LogPath, "report.yml"))
+	if err != nil {
+		log.Fatal(err)
+	}
 	if failed {
 		os.Exit(1)
 	}
@@ -170,6 +175,10 @@ func executePlan(ctx *core.RestTestContext, s string) {
 				failed = true
 			}
 		}
+	}
+	err = report.WriteReport(filepath.Join(ctx.LogPath, "report.yml"))
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	if failed {

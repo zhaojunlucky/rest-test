@@ -1,6 +1,9 @@
 package report
 
-import "github.com/zhaojunlucky/rest-test/pkg/model"
+import (
+	"fmt"
+	"github.com/zhaojunlucky/rest-test/pkg/model"
+)
 
 type TestCaseReport struct {
 	ExecutionTime float64
@@ -28,4 +31,19 @@ func (t *TestCaseReport) GetError() error {
 
 func (t *TestCaseReport) GetStatus() string {
 	return t.Status
+}
+
+func (t *TestCaseReport) GetReportData() (map[string]any, error) {
+	if t.Status == "" {
+		return nil, fmt.Errorf("test case desc: %s name: %s is not executed", t.TestCase.Description, t.TestCase.Name)
+	}
+	return map[string]any{
+		"type":          "case",
+		"desc":          t.TestCase.Description,
+		"name":          t.TestCase.Name,
+		"executionTime": t.ExecutionTime,
+		"totalTime":     t.TotalTime,
+		"error":         getErrorStr(t.Error),
+		"status":        t.Status,
+	}, nil
 }

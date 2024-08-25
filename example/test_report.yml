@@ -1,0 +1,25 @@
+type: plan
+name: test plan
+status: Completed
+executionTime: 123
+totalTime: 12
+error: xxx
+suites:
+    - name: rest test suite
+      status: Completed
+      executionTime: 123
+      totalTime: 12
+      error: xxx
+      cases:
+          - desc: list github servers
+            name: xxx
+            status: Passed
+            executionTime: 123
+            totalTime: 12
+            error: xxx
+          - desc: create github server
+            status: Passed
+            name:
+            executionTime: 123
+            totalTime: 12
+            error: xxx

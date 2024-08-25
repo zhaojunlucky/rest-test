@@ -1,7 +1,11 @@
 package report
 
 import (
+	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/zhaojunlucky/rest-test/pkg/model"
+	"gopkg.in/yaml.v3"
+	"os"
 )
 
 type TestPlanReport struct {
@@ -39,4 +43,53 @@ func (t *TestPlanReport) GetError() error {
 
 func (t *TestPlanReport) GetStatus() string {
 	return t.Status
+}
+
+func (t *TestPlanReport) GetReportData() (map[string]any, error) {
+	if t.Status == "" {
+		return nil, fmt.Errorf("test plan %s name is not executed", t.TestPlan.Name)
+	}
+	var suiteDataList []map[string]any
+
+	for _, suiteReport := range t.testSuitesReports {
+		suiteData, err := suiteReport.GetReportData()
+		if err != nil {
+			return nil, err
+		}
+		suiteDataList = append(suiteDataList, suiteData)
+	}
+	return map[string]any{
+		"type":          "plan",
+		"name":          t.TestPlan.Name,
+		"executionTime": t.ExecutionTime,
+		"totalTime":     t.TotalTime,
+		"error":         getErrorStr(t.Error),
+		"status":        t.Status,
+		"suites":        suiteDataList,
+	}, nil
+}
+
+func (t *TestPlanReport) WriteReport(file string) error {
+	log.Infof("write test plan report to file: %s", file)
+
+	data, err := t.GetReportData()
+	if err != nil {
+		return err
+	}
+	out, err := yaml.Marshal(&data)
+	if err != nil {
+		return err
+	}
+	fi, err := os.Create(file)
+	if err != nil {
+		return err
+	}
+	defer func(fi *os.File) {
+		err := fi.Close()
+		if err != nil {
+			log.Errorf("close file %s error: %s", file, err.Error())
+		}
+	}(fi)
+	_, err = fi.Write(out)
+	return err
 }
