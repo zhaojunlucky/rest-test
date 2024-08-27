@@ -32,16 +32,12 @@ script: |
 		t.Fatal(err)
 	}
 	mapWrapper := collection.NewMapWrapper(jsonData)
-	jsonBody := RestTestResponseJSONBody{
-		ContainsRequestJSON: false,
-	}
+	jsonBody := RestTestResponseJSONBody{}
 	err = jsonBody.Parse(mapWrapper)
 	if err != nil {
 		t.Error(err)
 	}
 
 	assert.False(t, jsonBody.Array)
-	assert.False(t, jsonBody.ContainsRequestJSON)
 	assert.Equal(t, math.MinInt, jsonBody.Length)
-	assert.Equal(t, 1, len(jsonBody.Validators))
 }

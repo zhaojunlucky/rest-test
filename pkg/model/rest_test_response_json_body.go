@@ -17,12 +17,11 @@ import (
 )
 
 type RestTestResponseJSONBody struct {
-	RestTestRequest     *RestTestRequestDef
-	Array               bool
-	Length              int
-	ContainsRequestJSON bool
-	JSONPathOPNode      *validator.JSONPathOperatorNode
-	Script              string
+	RestTestRequest *RestTestRequestDef
+	Array           bool
+	Length          int
+	JSONPathOPNode  *validator.JSONPathOperatorNode
+	Script          string
 }
 
 func (d *RestTestResponseJSONBody) UpdateRequest(req *RestTestRequestDef) error {
@@ -106,13 +105,6 @@ func (d *RestTestResponseJSONBody) Parse(mapWrapper *collection.MapWrapper) erro
 
 	} else {
 		d.Length = math.MinInt
-	}
-
-	if mapWrapper.Has("containsRequestJSON") {
-		err := mapWrapper.Get("containsRequestJSON", &d.ContainsRequestJSON)
-		if err != nil {
-			return err
-		}
 	}
 
 	if !mapWrapper.Has("validators") {
