@@ -8,7 +8,10 @@ import (
 	"github.com/zhaojunlucky/rest-test/pkg/execution"
 	"github.com/zhaojunlucky/rest-test/pkg/model"
 	"github.com/zhaojunlucky/rest-test/pkg/report"
+	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -119,7 +122,8 @@ func (t *TestCaseExecutor) performHTTPRequest(ctx *core.RestTestContext, global 
 		url = fmt.Sprintf("%s/%s", global.APIPrefix, url)
 	}
 
-	bodyReader, err := def.Request.Body.GetBody(global.DataDir, js)
+	bodyReader, body, err := def.Request.Body.GetBody(global.DataDir, js)
+
 	if err != nil {
 		log.Errorf("failed to get body: %v", err)
 		return nil, err
@@ -140,7 +144,56 @@ func (t *TestCaseExecutor) performHTTPRequest(ctx *core.RestTestContext, global 
 	for k, v := range def.Request.Headers {
 		req.Header.Add(k, v)
 	}
+
+	t.writeRequest(ctx, def, req, body)
 	return http.DefaultClient.Do(req)
+}
+
+func (t *TestCaseExecutor) writeRequest(ctx *core.RestTestContext, def *model.TestCaseDef, req *http.Request, body *string) {
+	reqFile := def.Description
+	reqFile = fmt.Sprintf("%s_%s_request.txt", def.GetID(), reqFile)
+	reqFile = filepath.Join(ctx.LogPath, reqFile)
+	reqFile = filepath.Clean(reqFile)
+	log.Infof("write test case request to file: %s", reqFile)
+
+	fi, err := os.Create(reqFile)
+	if err != nil {
+		log.Errorf("create file %s error: %s", reqFile, err.Error())
+		return
+	}
+	defer func(fi *os.File) {
+		err := fi.Close()
+		if err != nil {
+			log.Errorf("close file %s error: %s", reqFile, err.Error())
+		}
+	}(fi)
+
+	_, err = io.WriteString(fi, fmt.Sprintf("URL: %s\n", req.URL.String()))
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	_, err = io.WriteString(fi, fmt.Sprintf("Method: %s\n\nHeaders:\n", req.Method))
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	for k, v := range req.Header {
+		_, err = io.WriteString(fi, fmt.Sprintf("%s: %s\n", k, strings.Join(v, ",")))
+		if err != nil {
+			log.Error(err)
+			return
+		}
+	}
+	if body != nil {
+		_, err = io.WriteString(fi, fmt.Sprintf("\nBody: %s\n", *body))
+		if err != nil {
+			log.Error(err)
+			return
+		}
+	}
+
 }
 
 func NewTestCaseExecutor() *TestCaseExecutor {

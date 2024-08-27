@@ -93,9 +93,9 @@ func (d *RestTestRequestBodyDef) parse(mapWrapper *collection.MapWrapper) error 
 	return nil
 }
 
-func (d *RestTestRequestBodyDef) GetBody(dataDir string, js core.JSEnvExpander) (io.Reader, error) {
+func (d *RestTestRequestBodyDef) GetBody(dataDir string, js core.JSEnvExpander) (io.Reader, *string, error) {
 	if !d.bodyValid {
-		return nil, nil
+		return nil, nil, nil
 	}
 	var file io.Reader
 	var err error
@@ -105,16 +105,17 @@ func (d *RestTestRequestBodyDef) GetBody(dataDir string, js core.JSEnvExpander) 
 		file, err = os.Open(filePath)
 		if err != nil {
 			log.Errorf("failed to open file %s: %s", filePath, err.Error())
-			return nil, err
+			return nil, nil, err
 		}
 		if d.UploadFile {
-			return file, nil
+			fileBody := fmt.Sprintf("@%s", filePath)
+			return file, &fileBody, nil
 		} else {
 			data, err := io.ReadAll(file)
 			if err != nil {
 				log.Errorf("failed to open file %s: %s", filePath, err.Error())
 
-				return nil, err
+				return nil, nil, err
 			}
 			body = string(data)
 		}
@@ -125,9 +126,9 @@ func (d *RestTestRequestBodyDef) GetBody(dataDir string, js core.JSEnvExpander) 
 
 		if err != nil {
 			log.Errorf("failed to expand script %s: %s", d.Script, err.Error())
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
-	return strings.NewReader(body), nil
+	return strings.NewReader(body), &body, nil
 }
