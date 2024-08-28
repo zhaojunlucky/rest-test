@@ -146,7 +146,7 @@ func (d *RestTestResponseJSONBody) validate(obj any, js core.JSEnvExpander) (any
 }
 
 func (d *RestTestResponseJSONBody) writeBody(ctx *core.RestTestContext, resp *http.Response, str string) error {
-	bodyFile := d.RestTestRequest.CaseDef.Description
+	bodyFile := d.RestTestRequest.CaseDef.GetFullDesc()
 	bodyFile = fmt.Sprintf("%s_%s_response.txt", d.RestTestRequest.CaseDef.GetID(), bodyFile)
 	bodyFile = filepath.Join(ctx.LogPath, bodyFile)
 	bodyFile = filepath.Clean(bodyFile)

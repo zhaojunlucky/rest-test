@@ -22,9 +22,9 @@ type TestCaseExecutor struct {
 func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, global *model.GlobalSetting, testCaseExecResult *execution.TestCaseExecutionResult,
 	testSuiteCase *TestSuiteCaseContext) *report.TestCaseReport {
 	defer func() {
-		log.Infof("[Case] end execute test case: %s-%s", testCaseExecResult.TestCaseDef.Description, testCaseExecResult.TestCaseDef.Name)
+		log.Infof("[Case] end execute test case: %s-%s", testCaseExecResult.TestCaseDef.GetID(), testCaseExecResult.TestCaseDef.GetFullDesc())
 	}()
-	log.Infof("[Case] start execute test case: %s-%s", testCaseExecResult.TestCaseDef.Description, testCaseExecResult.TestCaseDef.Name)
+	log.Infof("[Case] start execute test case: %s-%s", testCaseExecResult.TestCaseDef.GetID(), testCaseExecResult.TestCaseDef.GetFullDesc())
 	testCaseExecResult.Executed = true
 
 	testCaseReport := &report.TestCaseReport{
@@ -88,9 +88,9 @@ func (t *TestCaseExecutor) Execute(ctx *core.RestTestContext, env env.Env, globa
 
 func (t *TestCaseExecutor) Prepare(ctx *execution.TestSuiteExecutionResult, def *model.TestCaseDef) error {
 	defer func() {
-		log.Infof("[Case] end prepare test case: %s-%s", def.Description, def.Name)
+		log.Infof("[Case] end prepare test case: %s - %s", def.GetID(), def.GetFullDesc())
 	}()
-	log.Infof("[Case] prepare test case: %s-%s", def.Description, def.Name)
+	log.Infof("[Case] prepare test case: %s - %s", def.GetID(), def.GetFullDesc())
 	if ctx.HasNamed(def.Name) {
 		return fmt.Errorf("duplicated named test case %s", def.Name)
 	}
@@ -150,7 +150,7 @@ func (t *TestCaseExecutor) performHTTPRequest(ctx *core.RestTestContext, global 
 }
 
 func (t *TestCaseExecutor) writeRequest(ctx *core.RestTestContext, def *model.TestCaseDef, req *http.Request, body *string) {
-	reqFile := def.Description
+	reqFile := def.GetFullDesc()
 	reqFile = fmt.Sprintf("%s_%s_request.txt", def.GetID(), reqFile)
 	reqFile = filepath.Join(ctx.LogPath, reqFile)
 	reqFile = filepath.Clean(reqFile)

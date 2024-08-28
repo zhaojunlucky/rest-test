@@ -30,10 +30,17 @@ func (t *TestCaseDef) GetID() string {
 	suiteId := t.SuiteDef.ID
 
 	if t.SuiteDef.PlanDef != nil {
-		return fmt.Sprintf("%d_%d_%d", suiteId, caseId, t.SuiteDef.PlanDef.ID)
+		return fmt.Sprintf("%d_%d_%d", t.SuiteDef.PlanDef.ID, suiteId, caseId)
 	} else {
 		return fmt.Sprintf("0_%d_%d", suiteId, caseId)
 	}
+}
+
+func (t *TestCaseDef) GetFullDesc() string {
+	if len(t.Name) > 0 {
+		return fmt.Sprintf("%s(%s)", t.Description, t.Name)
+	}
+	return t.Description
 }
 
 func (t *TestCaseDef) CloneRequestRef(src *RestTestRequestDef) error {

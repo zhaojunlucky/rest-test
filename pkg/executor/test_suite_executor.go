@@ -18,9 +18,9 @@ type TestSuiteExecutor struct {
 func (t *TestSuiteExecutor) Execute(ctx *core.RestTestContext, environ env.Env, global *model.GlobalSetting, testSuiteExecResult *execution.TestSuiteExecutionResult) *report.TestSuiteReport {
 	defer func() {
 		testSuiteExecResult.Executed = true
-		log.Infof("[Suite] end test suite: %s", testSuiteExecResult.TestSuiteDef.Name)
+		log.Infof("[Suite] end executetest suite: %s-%s", testSuiteExecResult.TestSuiteDef.GetID(), testSuiteExecResult.TestSuiteDef.Name)
 	}()
-	log.Infof("[Suite] execute test suite: %s", testSuiteExecResult.TestSuiteDef.Name)
+	log.Infof("[Suite] start execute test suite: %s-%s", testSuiteExecResult.TestSuiteDef.GetID(), testSuiteExecResult.TestSuiteDef.Name)
 	if testSuiteExecResult.TestSuiteReport == nil {
 		testSuiteExecResult.TestSuiteReport = &report.TestSuiteReport{
 			TestSuite: testSuiteExecResult.TestSuiteDef,
@@ -80,9 +80,9 @@ func (t *TestSuiteExecutor) Execute(ctx *core.RestTestContext, environ env.Env, 
 
 func (t *TestSuiteExecutor) Prepare(ctx *execution.TestPlanExecutionResult, def model.TestSuiteDef) error {
 	defer func() {
-		log.Infof("[Suite] end prepare test suite: %s", def.Name)
+		log.Infof("[Suite] end prepare test suite: %s-%s", def.GetID(), def.Name)
 	}()
-	log.Infof("[Suite] prepare test suite: %s", def.Name)
+	log.Infof("[Suite] start prepare test suite: %s-%s", def.GetID(), def.Name)
 	if ctx.HasNamed(def.Name) {
 		return fmt.Errorf("duplicated named test suite %s", def.Name)
 	}
@@ -106,9 +106,9 @@ func (t *TestSuiteExecutor) Prepare(ctx *execution.TestPlanExecutionResult, def 
 
 func (t *TestSuiteExecutor) Validate(result *execution.TestSuiteExecutionResult) error {
 	defer func() {
-		log.Infof("[Suite] end validate test suite: %s", result.TestSuiteDef.Name)
+		log.Infof("[Suite] end validate test suite: %s-%s", result.TestSuiteDef.GetID(), result.TestSuiteDef.Name)
 	}()
-	log.Infof("[Suite] validate test suite: %s", result.TestSuiteDef.Name)
+	log.Infof("[Suite] start validate test suite: %s-%s", result.TestSuiteDef.GetID(), result.TestSuiteDef.Name)
 	for _, testCaseResult := range result.TestCasesExecResults {
 
 		if len(testCaseResult.TestCaseDef.RequestRef) > 0 {
@@ -134,10 +134,10 @@ func (t *TestSuiteExecutor) Validate(result *execution.TestSuiteExecutionResult)
 
 func (t *TestSuiteExecutor) ExecuteSuite(ctx *core.RestTestContext, osEnv env.Env, testSuiteDef *model.TestSuiteDef) (*report.TestSuiteReport, error) {
 	defer func() {
-		log.Infof("[Suite] end test suite: %s", testSuiteDef.Name)
+		log.Infof("[Suite] end run test suite: %s-%s", testSuiteDef.GetID(), testSuiteDef.Name)
 	}()
 
-	log.Infof("[Suite] start test suite: %s", testSuiteDef.Name)
+	log.Infof("[Suite] start run test suite: %s-%s", testSuiteDef.GetID(), testSuiteDef.Name)
 	testSuiteExecCtx, err := t.prepare(testSuiteDef)
 	if testSuiteExecCtx == nil {
 		return nil, fmt.Errorf("failed to prepare test plan: %v", err)
@@ -153,21 +153,20 @@ func (t *TestSuiteExecutor) ExecuteSuite(ctx *core.RestTestContext, osEnv env.En
 		suiteReport.Status = report.ConfigError
 		return suiteReport, err
 	}
-	log.Infof("validate test suite: %s", testSuiteDef.Name)
+	log.Infof("validate test suite: %s-%s", testSuiteDef.GetID(), testSuiteDef.Name)
 	if err = t.Validate(testSuiteExecCtx); err != nil {
 		suiteReport.Error = err
 		suiteReport.Status = report.ConfigError
 		return suiteReport, err
 	}
 	planEnv := env.NewReadWriteEnv(osEnv, testSuiteDef.Environment)
-	log.Infof("execute test suite: %s", testSuiteDef.Name)
+	log.Infof("execute test suite: %s-%s", testSuiteDef.GetID(), testSuiteDef.Name)
 	t.Execute(ctx, planEnv, &testSuiteDef.Global, testSuiteExecCtx)
 
 	start := time.Now()
 
 	suiteReport.ExecutionTime = time.Since(start).Seconds()
 	suiteReport.TotalTime = time.Since(start).Seconds()
-	log.Infof("[Suite] end test suite: %s", testSuiteDef.Name)
 	return suiteReport, nil
 }
 

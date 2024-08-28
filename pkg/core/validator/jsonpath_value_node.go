@@ -70,7 +70,7 @@ func (j *JSONPathValueNode) Validate(js core.JSEnvExpander, v any) error {
 
 		err = j.compare(actual, expect)
 		if err != nil {
-			log.Errorf("compile error %s at path %s", err.Error(), childPath)
+			log.Errorf("compare error %s at path %s", err.Error(), childPath)
 			return err
 		}
 

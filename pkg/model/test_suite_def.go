@@ -29,6 +29,14 @@ type TestSuiteDef struct {
 	path        string
 }
 
+func (t *TestSuiteDef) GetID() string {
+	if t.PlanDef != nil {
+		return fmt.Sprintf("%d_%d", t.PlanDef.ID, t.ID)
+	} else {
+		return fmt.Sprintf("0_%d", t.ID)
+	}
+}
+
 func (t *TestSuiteDef) Parse(file string) error {
 	t.ID = increaseSuiteCounter()
 	fi, err := os.Open(file)

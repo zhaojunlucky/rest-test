@@ -16,10 +16,10 @@ type TestPlanExecutor struct {
 }
 
 func (t *TestPlanExecutor) ExecutePlan(ctx *core.RestTestContext, environ env.Env, testPlanDef *model.TestPlanDef) (*report.TestPlanReport, error) {
-	log.Infof("[Plan] start test plan: %s", testPlanDef.Name)
+	log.Infof("[Plan] start run test plan: %s", testPlanDef.Name)
 
 	defer func() {
-		log.Infof("[Plan] end test plan: %s", testPlanDef.Name)
+		log.Infof("[Plan] end run test plan: %s", testPlanDef.Name)
 	}()
 
 	testPlanExecCtx, err := t.Prepare(testPlanDef)
@@ -61,10 +61,10 @@ func (t *TestPlanExecutor) ExecutePlan(ctx *core.RestTestContext, environ env.En
 func (t *TestPlanExecutor) Execute(ctx *core.RestTestContext, environ env.Env, global *model.GlobalSetting, testPlanExecCtx *execution.TestPlanExecutionResult) {
 	defer func() {
 		testPlanExecCtx.Executed = true
-		log.Infof("[Plan] end test plan: %s", testPlanExecCtx.TestPlanDef.Name)
+		log.Infof("[Plan] end execute test plan: %s", testPlanExecCtx.TestPlanDef.Name)
 	}()
 
-	log.Infof("[Plan] execute test plan: %s", testPlanExecCtx.TestPlanDef.Name)
+	log.Infof("[Plan] start execute test plan: %s", testPlanExecCtx.TestPlanDef.Name)
 	testPlanDef := testPlanExecCtx.TestPlanDef
 	planReport := testPlanExecCtx.TestPlanReport
 	if testPlanDef.Enabled == false {
