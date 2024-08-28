@@ -79,10 +79,16 @@ func (t *RestTestResponseDef) Parse(mapWrapper *collection.MapWrapper) error {
 func (t *RestTestResponseDef) Validate(ctx *core.RestTestContext, resp *http.Response, js core.JSEnvExpander) (any, error) {
 	if t.Code != 0 && resp.StatusCode != t.Code {
 		log.Errorf("invalid response code: %d, expect %d", resp.StatusCode, t.Code)
+		if err := writeBodyRaw(ctx, t.RestTestRequest.CaseDef, resp); err != nil {
+			log.Error(err)
+		}
 		return nil, fmt.Errorf("invalid response code: %d, expect %d", resp.StatusCode, t.Code)
 	}
 	if len(t.ContentType) != 0 && !strings.HasPrefix(resp.Header.Get("Content-Type"), t.ContentType) {
 		log.Errorf("invalid response content type: %s, expect %s", resp.Header.Get("Content-Type"), t.ContentType)
+		if err := writeBodyRaw(ctx, t.RestTestRequest.CaseDef, resp); err != nil {
+			log.Error(err)
+		}
 		return nil, fmt.Errorf("invalid response content type: %s, expect %s", resp.Header.Get("Content-Type"), t.ContentType)
 	}
 
@@ -90,6 +96,9 @@ func (t *RestTestResponseDef) Validate(ctx *core.RestTestContext, resp *http.Res
 		return t.Body.Validate(ctx, resp, js)
 
 	} else {
+		if err := writeBodyRaw(ctx, t.RestTestRequest.CaseDef, resp); err != nil {
+			log.Error(err)
+		}
 		return nil, nil
 	}
 }

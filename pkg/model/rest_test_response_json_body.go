@@ -10,8 +10,6 @@ import (
 	"io"
 	"math"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 	"unicode"
 )
@@ -36,7 +34,7 @@ func (d *RestTestResponseJSONBody) Validate(ctx *core.RestTestContext, resp *htt
 	}
 	bodyStr := string(data)
 
-	if err = d.writeBody(ctx, resp, bodyStr); err != nil {
+	if err = writeBody(ctx, d.RestTestRequest.CaseDef, resp, bodyStr); err != nil {
 		log.Warnf("write test case response body error: %s", err.Error())
 	}
 	for _, r := range bodyStr {
@@ -143,46 +141,4 @@ func (d *RestTestResponseJSONBody) validate(obj any, js core.JSEnvExpander) (any
 		}
 	}
 	return obj, nil
-}
-
-func (d *RestTestResponseJSONBody) writeBody(ctx *core.RestTestContext, resp *http.Response, str string) error {
-	bodyFile := d.RestTestRequest.CaseDef.GetFullDesc()
-	bodyFile = fmt.Sprintf("%s_%s_response.txt", d.RestTestRequest.CaseDef.GetID(), bodyFile)
-	bodyFile = filepath.Join(ctx.LogPath, bodyFile)
-	bodyFile = filepath.Clean(bodyFile)
-	log.Infof("write test case response body to file: %s", bodyFile)
-
-	fi, err := os.Create(bodyFile)
-	if err != nil {
-		log.Errorf("create file %s error: %s", bodyFile, err.Error())
-		return err
-	}
-	defer func(fi *os.File) {
-		err := fi.Close()
-		if err != nil {
-			log.Errorf("close file %s error: %s", bodyFile, err.Error())
-		}
-	}(fi)
-
-	_, err = io.WriteString(fi, fmt.Sprintf("Status: %d\n", resp.StatusCode))
-
-	_, err = io.WriteString(fi, "\nHeaders:\n")
-	if err != nil {
-		return err
-	}
-
-	for k, v := range resp.Header {
-		_, err = io.WriteString(fi, fmt.Sprintf("%s: %s\n", k, strings.Join(v, ",")))
-		if err != nil {
-			return err
-		}
-	}
-	_, err = io.WriteString(fi, "\nBody:\n")
-
-	_, err = io.WriteString(fi, str)
-	if err != nil {
-		log.Errorf("write file %s error: %s", bodyFile, err.Error())
-		return err
-	}
-	return nil
 }
