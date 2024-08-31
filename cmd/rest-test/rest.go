@@ -78,8 +78,10 @@ func setupLog(ctx *core.RestTestContext, logPath, logLevel string) error {
 	return nil
 }
 
-func main() {
+var Version string = "0.0.1-dev"
 
+func main() {
+	fmt.Printf("rest-test version: %s\n", Version)
 	planPtr := flag.String("plan", "", "a test plan")
 	suitePtr := flag.String("suite", "", "a test suite")
 	logLevel := flag.String("level", "info", "log level. levels: debug, info(default), warn, error")
@@ -99,8 +101,12 @@ func main() {
 		log.Error("only one of plan or suite can be specified")
 		return
 	} else if len(*planPtr) > 0 {
+		log.Infof("rest-test version: %s", Version)
+
 		executePlan(ctx, *planPtr)
 	} else {
+		log.Infof("rest-test version: %s", Version)
+
 		executeSuite(ctx, *suitePtr)
 	}
 }

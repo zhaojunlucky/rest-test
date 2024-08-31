@@ -1,0 +1,38 @@
+name: Rest Test CI
+
+on:
+  pull_request:
+    branches: [ "main"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: test
+      run: |
+        ls -al
+        echo "test and build"
+        go test -parallel 4  github.com/zhaojunlucky/rest-test/pkg/core
+        go test -parallel 4  github.com/zhaojunlucky/rest-test/pkg/model
+        go build cmd/rest-test/rest.go
+
+    - name: Official SonarQube Scan
+      uses: SonarSource/sonarqube-scan-action@v2.3.0
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ secrets.SONAR_SERVER }}
+      with:
+        args: >
+          -Dsonar.pullrequest.github.repository=${{ github.repository }}
+          -Dsonar.pullrequest.branch=${{github.event.pull_request.head.ref}}
+          -Dsonar.pullrequest.base=main
+          -Dsonar.pullrequest.key=${{github.event.number}}
