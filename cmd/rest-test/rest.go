@@ -36,7 +36,7 @@ func setupLog(ctx *core.RestTestContext, logPath, logLevel string) error {
 	}
 
 	if len(logPath) <= 0 {
-		logPath = "/var/log/rest_test"
+		logPath = "."
 	}
 	t := time.Now()
 

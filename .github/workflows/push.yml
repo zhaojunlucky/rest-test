@@ -36,6 +36,12 @@ jobs:
     - name: upload
       uses: actions/upload-artifact@v4
       with:
+        name: rest-test-1.0.${{github.run_number}}
         path: |
           ${{env.amd64}}
           ${{env.arm64}}
+    - name: publish release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+      run: gh release create 1.0.${{github.run_number}} --draft=true ./rest-test-1.0.${{github.run_number}}.zip
