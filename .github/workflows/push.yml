@@ -33,13 +33,7 @@ jobs:
         
         echo "build darwin ${arm64}"
         env GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=1.0.${{github.run_number}}" -o ${{env.arm64}} cmd/rest-test/rest.go
-    - name: upload
-      uses: actions/upload-artifact@v4
-      with:
-        name: rest-test-1.0.${{github.run_number}}
-        path: |
-          ${{env.amd64}}
-          ${{env.arm64}}
+
     - name: publish release
       env:
         GH_TOKEN: ${{ github.token }}
