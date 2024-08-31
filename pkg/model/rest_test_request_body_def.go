@@ -15,7 +15,7 @@ import (
 type RestTestRequestBodyDef struct {
 	File        string
 	UploadFile  bool
-	Environment map[string]string
+	Environment map[string]string // will remove
 	Body        string
 	Script      string
 	bodyValid   bool

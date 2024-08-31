@@ -1,6 +1,6 @@
 # REST API Test
 
-The `rest-test` command line tool is used to test REST API.
+The `rest-test` command line tool is used to test and validate REST API.
 
 ## Features
 
@@ -15,6 +15,9 @@ The `rest-test` command line tool is used to test REST API.
     * `int` convert a number string to int
     * `float` convert a number string to float
     * `bool` convert a number, string, list and map to bool
+    * `len` get length of a string, a map or a slice/array
     * `contain` check whether an element in a list or map. Check whether a string is a substring of another string
 * `JavaScript` to evaluate values
 * `YAML` report
+
+> For more details please refer to [REST API Test](https://exia.dev/project/rest-test/)
