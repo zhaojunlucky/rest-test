@@ -7,7 +7,7 @@ env:
   amd64: rest_x64
   arm64: rest_arm
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -44,4 +44,6 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
         GH_REPO: ${{ github.repository }}
-      run: gh release create 1.0.${{github.run_number}} --draft=true ./rest-test-1.0.${{github.run_number}}.zip
+      run: |
+        zip -r rest-test-1.0.${{github.run_number}}.zip ${{env.amd64}} ${{env.arm64}}
+        gh release create v1.0.${{github.run_number}} -t v1.0.${{github.run_number}} --draft=false ./rest-test-1.0.${{github.run_number}}.zip
