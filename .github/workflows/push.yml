@@ -26,7 +26,6 @@ jobs:
     - name: build
       run: |
         echo "test and build"
-        git clean -df
         go test -parallel 4  github.com/zhaojunlucky/rest-test/pkg/core
         go test -parallel 4  github.com/zhaojunlucky/rest-test/pkg/model
         echo "build linux ${amd64}"
