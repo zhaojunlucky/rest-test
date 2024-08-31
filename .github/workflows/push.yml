@@ -30,13 +30,13 @@ jobs:
         go test -parallel 4  github.com/zhaojunlucky/rest-test/pkg/core
         go test -parallel 4  github.com/zhaojunlucky/rest-test/pkg/model
         echo "build linux ${amd64}"
-        env GOOS=linux GOARCH=amd64 go build -ldflags -o -o ${{amd64}} "-X main.Version=1.0.${{github.run_number}}" cmd/rest-test/rest.go
+        env GOOS=linux GOARCH=amd64 go build -ldflags -o -o ${{env.amd64}} "-X main.Version=1.0.${{github.run_number}}" cmd/rest-test/rest.go
         
         echo "build darwin ${arm64}"
-        env GOOS=darwin GOARCH=arm64 go build -ldflags -o -o ${{arm64}} "-X main.Version=1.0.${{github.run_number}}" cmd/rest-test/rest.go
+        env GOOS=darwin GOARCH=arm64 go build -ldflags -o -o ${{env.arm64}} "-X main.Version=1.0.${{github.run_number}}" cmd/rest-test/rest.go
     - name: upload
       uses: actions/upload-artifact@v4
       with:
         path: |
-          ${{amd64}}
-          ${{arm64}}
+          ${{env.amd64}}
+          ${{env.arm64}}
